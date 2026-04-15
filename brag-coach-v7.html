@@ -139,7 +139,33 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
 .snd-btn:hover{background:#1f4caf}
 .widget.brag-mode .snd-btn{background:#5dd57a;color:#161616}
 .widget.brag-mode .snd-btn:hover{background:#49a860}
+/* TEXTURE TOGGLE */
+.widget.paper-bg .panel.travel{background-image:url(https://type37.github.io/brag-coach-prototype/paper-texture.jpg);background-size:cover;background-position:center}
+
+/* COLLAPSIBLE WELCOME */
+.collapse-bar{display:flex;align-items:center;justify-content:center;padding:4px;cursor:pointer;z-index:2;transition:opacity .2s}
+.collapse-bar .chev{font-size:14px;color:#999;transition:transform .2s}
+.widget.brag-mode .collapse-bar .chev{color:#666}
+.panel.collapsed .t-agent-stage,.panel.collapsed .t-intro,.panel.collapsed .b-stage,.panel.collapsed .b-text{display:none}
+.panel.collapsed{grid-template-rows:0px 0px auto 1fr}
+.collapsed-label{display:none;font-family:"IBM Plex Mono",monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;padding:8px 20px;text-align:center}
+.panel.travel .collapsed-label{color:#666}
+.panel.brag .collapsed-label{color:#888}
+.panel.collapsed .collapsed-label{display:block}
 .powered{text-align:center;padding:4px;font-size:10px;color:#525252;position:relative;z-index:5;background:#fff;transition:background .4s,color .4s}
+/* TEXTURE TOGGLE */
+.widget.paper-bg .panel.travel{background-image:url(https://type37.github.io/brag-coach-prototype/paper-texture.jpg);background-size:cover;background-position:center}
+
+/* COLLAPSIBLE WELCOME */
+.collapse-bar{display:flex;align-items:center;justify-content:center;padding:4px;cursor:pointer;z-index:2;transition:opacity .2s}
+.collapse-bar .chev{font-size:14px;color:#999;transition:transform .2s}
+.widget.brag-mode .collapse-bar .chev{color:#666}
+.panel.collapsed .t-agent-stage,.panel.collapsed .t-intro,.panel.collapsed .b-stage,.panel.collapsed .b-text{display:none}
+.panel.collapsed{grid-template-rows:0px 0px auto 1fr}
+.collapsed-label{display:none;font-family:"IBM Plex Mono",monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;padding:8px 20px;text-align:center}
+.panel.travel .collapsed-label{color:#666}
+.panel.brag .collapsed-label{color:#888}
+.panel.collapsed .collapsed-label{display:block}
 .widget.brag-mode .powered{color:#555;background:#161616}
 
 .wipe-bar{position:absolute;inset:0;z-index:10;background:#f56115;transform:translateX(-101%);pointer-events:none}
@@ -163,6 +189,9 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
     <option value="slide">Slide</option>
     <option value="wipe">Wipe</option>
   </select>
+  <div class="sep"></div>
+  <span class="lb">Texture</span>
+  <select onchange="toggleTexture(this.value)"><option value="off">Off</option><option value="on">Paper</option></select>
 </div>
 
 <div class="widget use-slide" id="widget">
@@ -174,6 +203,8 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
     <div class="panel travel" id="panelTravel">
       <div class="t-agent-stage"><div class="t-agent"><span class="t-agent-q">DC</span><div class="t-agent-label">Travel Agent</div></div></div>
       <div class="t-intro">Hi there! You know those places only the locals know? Let our Destination Cleveland virtual assistant or a live CLE Concierge help you find them with suggestions on things to do, events to attend, restaurants, maps, and other tips.</div>
+      <div class="collapsed-label" id="travelCollLabel">DC Travel Agent</div>
+      <div class="collapse-bar" onclick="toggleCollapse('travel')"><span class="chev" id="travelChev">▲</span></div>
       <button class="mode-btn to-brag" onclick="switchMode('brag')">Chat with Brag Coach</button>
       <div class="panel-bottom">
         <div class="t-prompts">
@@ -201,6 +232,8 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
           <div class="b-name">BRAG</div>
           <div class="b-sub">Your Cleveland trash talk machine</div>
       </div>
+      <div class="collapsed-label" id="bragCollLabel">Brag Coach</div>
+      <div class="collapse-bar" onclick="toggleCollapse('brag')"><span class="chev" id="bragChev">▲</span></div>
       <button class="mode-btn to-travel" onclick="switchMode('travel')">← Back to Travel Agent</button>
       <div class="panel-bottom">
       <div class="b-prompts" id="bragPrompts"></div>
@@ -246,6 +279,24 @@ function setPage(p,btn){
   document.querySelectorAll('.opts button').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   renderBragPrompts();
+
+function toggleTexture(v){
+  document.getElementById("widget").classList.toggle("paper-bg",v==="on");
+}
+
+function toggleCollapse(panel){
+  const p=document.getElementById(panel==="travel"?"panelTravel":"panelBrag");
+  const chev=document.getElementById(panel==="travel"?"travelChev":"bragChev");
+  p.classList.toggle("collapsed");
+  chev.textContent=p.classList.contains("collapsed")?"▼":"▲";
+}
+
+function autoCollapse(){
+  document.getElementById("panelBrag").classList.add("collapsed");
+  document.getElementById("bragChev").textContent="▼";
+  document.getElementById("panelTravel").classList.add("collapsed");
+  document.getElementById("travelChev").textContent="▼";
+}
   if(mode==='brag'){switchMode('travel')}
 }
 
@@ -289,6 +340,7 @@ function travelTap(t){
 function bragTap(t){
   const m=document.getElementById('bragMsgs');m.classList.remove('hidden');
   document.getElementById('backStrip').classList.add('show');
+  autoCollapse();
   m.querySelectorAll('.b-prompts').forEach(el=>el.remove());
   m.innerHTML+='<div class="m usr-b" style="align-self:flex-end">'+t+'</div>';scrollP('brag');
   if(DW.some(w=>t.toLowerCase().includes(w))){
@@ -336,6 +388,24 @@ function smartS(btn){const t=btn.closest('.m').childNodes[0]?btn.closest('.m').c
 function cpI(btn,text){navigator.clipboard.writeText(text).then(()=>{btn.classList.add('done');btn.textContent='\u2713';setTimeout(()=>{btn.classList.remove('done');btn.textContent='Copy'},2000)})}
 function send(){const i=document.getElementById('inp'),t=i.value.trim();if(!t)return;i.value='';if(mode==='brag')bragTap(t);else travelTap(t)}
 renderBragPrompts();
+
+function toggleTexture(v){
+  document.getElementById("widget").classList.toggle("paper-bg",v==="on");
+}
+
+function toggleCollapse(panel){
+  const p=document.getElementById(panel==="travel"?"panelTravel":"panelBrag");
+  const chev=document.getElementById(panel==="travel"?"travelChev":"bragChev");
+  p.classList.toggle("collapsed");
+  chev.textContent=p.classList.contains("collapsed")?"▼":"▲";
+}
+
+function autoCollapse(){
+  document.getElementById("panelBrag").classList.add("collapsed");
+  document.getElementById("bragChev").textContent="▼";
+  document.getElementById("panelTravel").classList.add("collapsed");
+  document.getElementById("travelChev").textContent="▼";
+}
 </script>
 </body>
 </html>
