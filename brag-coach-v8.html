@@ -72,7 +72,10 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
 .panel.brag::-webkit-scrollbar-thumb{background:#555}
 
 /* Paper texture */
-.widget.paper-bg .panel.travel{background:url(https://type37.github.io/brag-coach-prototype/paper-texture.jpg) center/cover}
+.widget.paper-bg .panel.travel{background:url(https://type37.github.io/brag-coach-prototype/paper-texture.jpg) center/800px auto repeat;}
+.widget.dark-tex-a .panel.brag{background:url(https://type37.github.io/brag-coach-prototype/guardian-texture-A-whisper.svg) repeat}
+.widget.dark-tex-b .panel.brag{background:url(https://type37.github.io/brag-coach-prototype/guardian-texture-B-texture.svg) repeat}
+.widget.dark-tex-c .panel.brag{background:url(https://type37.github.io/brag-coach-prototype/guardian-texture-C-warm.svg) repeat}
 
 /* Slide transition */
 .widget.use-slide .panel{transition:transform .35s cubic-bezier(.4,0,.2,1)}
@@ -129,14 +132,9 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
 .b-pr{padding:10px 16px;border-radius:50px;border:1.5px solid #666;background:#1a1a1a;color:#ddd;font-family:'Noto Sans',sans-serif;font-size:13px;cursor:pointer;text-align:left}
 .b-pr:hover{border-color:#aaa;color:#fff;background:#222}
 
-/* Back strip */
-.back-strip{display:none;padding:8px 20px;background:rgba(22,22,22,.95);border-bottom:1px solid #333;position:sticky;top:0;z-index:3}
-.back-strip.show{display:block}
-.back-strip a{font-size:12px;color:#aaa;cursor:pointer;text-decoration:none}
-.back-strip a:hover{color:#fff}
 
 /* ============ MESSAGES ============ */
-.msgs{padding:16px 20px;display:flex;flex-direction:column;gap:10px;flex:1}
+.msgs{padding:16px 20px;display:flex;flex-direction:column;gap:10px;flex:1;min-height:0}
 .msgs.hidden{display:none}
 .m-row{display:flex;gap:10px;align-items:flex-start;animation:fadeUp .3s ease both}
 .m-av{width:34px;height:34px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:2px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px}
@@ -280,7 +278,6 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
         <div class="b-sub">Your Cleveland trash talk machine</div>
       </div>
       <div class="b-prompts" id="bPrompts"></div>
-      <div class="back-strip" id="backStrip"><a onclick="doSwitch()">&#8592; Switch to Travel Agent</a></div>
       <div class="msgs hidden" id="bMsgs"></div>
     </div>
   </div>
@@ -327,6 +324,11 @@ function setPage(p,btn){
   if(mode==='brag') doSwitch();
 }
 function setTrans(t){trans=t;const w=document.getElementById('W');w.classList.remove('use-slide','use-wipe');w.classList.add('use-'+t)}
+function setDarkTex(v){
+  var w=document.getElementById("W");
+  w.classList.remove("dark-tex-a","dark-tex-b","dark-tex-c");
+  if(v!=="off") w.classList.add("dark-tex-"+v);
+}
 function setTexture(v){document.getElementById('W').classList.toggle('paper-bg',v==='on')}
 function toggleMin(){document.getElementById('W').classList.toggle('minimized')}
 
@@ -340,7 +342,6 @@ function doSwitch(){
   document.getElementById('tMsgs').innerHTML='';
   document.getElementById('bMsgs').classList.add('hidden');
   document.getElementById('bMsgs').innerHTML='';
-  document.getElementById('backStrip').classList.remove('show');
 
   if(trans==='wipe'){
     const bar=document.getElementById('wipeBar');
@@ -392,7 +393,6 @@ function travelTap(t){
 function bragTap(t){
   const m=document.getElementById('bMsgs');
   m.classList.remove('hidden');
-  document.getElementById('backStrip').classList.add('show');
   m.querySelectorAll('.b-prompts').forEach(el=>el.remove());
   m.innerHTML+='<div class="msg usr-b" style="align-self:flex-end">'+t+'</div>';
   scroll('brag');
