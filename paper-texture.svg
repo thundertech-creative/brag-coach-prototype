@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300">
+  <defs>
+    <filter id="paper" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="4" stitchTiles="stitch" result="noise"/>
+      <feDiffuseLighting in="noise" lighting-color="#F5F5F5" surfaceScale="1.5" result="lit">
+        <feDistantLight azimuth="45" elevation="55"/>
+      </feDiffuseLighting>
+      <feComposite in="lit" in2="SourceGraphic" operator="arithmetic" k1="0" k2="0.15" k3="0.85" k4="0"/>
+    </filter>
+  </defs>
+  <rect width="300" height="300" fill="#F5F5F5"/>
+  <rect width="300" height="300" filter="url(#paper)" opacity="1"/>
+</svg>
