@@ -72,7 +72,7 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
 .panel.brag::-webkit-scrollbar-thumb{background:#555}
 
 /* Paper texture */
-.widget.paper-bg .panel.travel{background-image:url(https://type37.github.io/brag-coach-prototype/paper-texture.jpg);background-size:500px auto;background-position:center;background-repeat:repeat}
+.widget.paper-bg .panel.travel{background-image:url(https://type37.github.io/brag-coach-prototype/paper-texture.jpg);background-size:1200px auto;background-position:center;background-repeat:repeat}
 .widget.dark-tex-a .panel.brag{background-image:url(https://type37.github.io/brag-coach-prototype/guardian-texture-A-whisper.svg);background-repeat:repeat;background-size:160px auto}
 .widget.dark-tex-b .panel.brag{background-image:url(https://type37.github.io/brag-coach-prototype/guardian-texture-B-texture.svg);background-repeat:repeat;background-size:160px auto}
 .widget.dark-tex-c .panel.brag{background-image:url(https://type37.github.io/brag-coach-prototype/guardian-texture-C-warm.svg);background-repeat:repeat;background-size:160px auto}
@@ -220,23 +220,23 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
   <div class="sep"></div>
   <span class="lb">Texture</span>
   <select onchange="setTexture(this.value)">
+    <option value="on" selected>Paper</option>
     <option value="off">Off</option>
-    <option value="on">Paper</option>
   </select>
   <div class="sep"></div>
   <button onclick="window.open('https://type37.github.io/brag-coach-prototype/brag-coach-spec.md','_blank')" style="background:#2d6bf1;border-color:#2d6bf1;color:#fff">SPEC</button>
   <div class="sep"></div>
   <span class="lb">Dark Tex</span>
   <select onchange="setDarkTex(this.value)">
+    <option value="a" selected>Whisper</option>
     <option value="off">None</option>
-    <option value="a">Whisper</option>
     <option value="b">Texture</option>
     <option value="c">Warm</option>
   </select>
 </div>
 
 <!-- WIDGET -->
-<div class="widget use-slide" id="W">
+<div class="widget use-slide paper-bg dark-tex-a" id="W">
   <div class="wipe-bar" id="wipeBar"></div>
 
   <!-- HEADER -->
