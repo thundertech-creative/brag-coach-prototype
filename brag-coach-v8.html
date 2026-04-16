@@ -113,6 +113,10 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
   background:#1a1a1a;
 }
 .b-coach-q{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;color:#f56115}
+.b-mascot{width:100%;height:100%;border-radius:50%;object-fit:cover;display:none}
+.b-coach.has-mascot .b-coach-q,.b-coach.has-mascot .b-coach-lbl{display:none}
+.b-coach.has-mascot .b-mascot{display:block}
+.b-coach.has-mascot{border:none;overflow:hidden;background:transparent}
 .b-coach-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#f56115;text-transform:uppercase;letter-spacing:.1em}
 @keyframes pop{0%{transform:scale(.8);opacity:0}40%{transform:scale(.9,1.12);opacity:1}60%{transform:scale(1.08,.92)}80%{transform:scale(.97,1.03)}100%{transform:scale(1)}}
 .b-coach.pop{animation:pop .5s cubic-bezier(.34,1.56,.64,1) both}
@@ -214,6 +218,13 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
   <button onclick="setPage('mabels',this)">Mabel's</button>
   <button onclick="setPage('music',this)">Music</button>
   <div class="sep"></div>
+  <span class="lb">Mascot</span>
+  <select onchange="setMascot(this.value)">
+    <option value="none">None</option>
+    <option value="dog">Dog</option>
+    <option value="mega">Megaphone</option>
+  </select>
+  <div class="sep"></div>
   <span class="lb">Transition</span>
   <select id="transSel" onchange="setTrans(this.value)">
     <option value="slide">Slide</option>
@@ -225,8 +236,7 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
     <option value="on" selected>Paper</option>
     <option value="off">Off</option>
   </select>
-  <div class="sep"></div>
-  <button onclick="window.open('https://type37.github.io/brag-coach-prototype/brag-coach-spec.md','_blank')" style="background:#2d6bf1;border-color:#2d6bf1;color:#fff">SPEC</button>
+
   <div class="sep"></div>
   <span class="lb">View</span>
   <select onchange="setView(this.value)"><option value="desktop">Desktop</option><option value="mobile">Mobile</option></select>
@@ -275,7 +285,7 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
     <!-- BRAG -->
     <div class="panel brag" id="pBrag">
       <div class="b-avatar">
-        <div class="b-coach" id="coach"><div class="b-coach-q">?</div><div class="b-coach-lbl">Coach</div></div>
+        <div class="b-coach" id="coach"><div class="b-coach-q">?</div><div class="b-coach-lbl">Coach</div><img class="b-mascot" id="mascotImg" src="" alt=""></div>
       </div>
       <div class="b-text">
         <div class="b-ready">READY. SET.</div>
@@ -335,6 +345,18 @@ function setDarkTex(v){
   var w=document.getElementById("W");
   w.classList.remove("dark-tex-a","dark-tex-b","dark-tex-c");
   if(v!=="off") w.classList.add("dark-tex-"+v);
+}
+function setMascot(v){
+  var coach=document.getElementById("coach");
+  var img=document.getElementById("mascotImg");
+  if(v==="none"){
+    coach.classList.remove("has-mascot");
+    img.src="";
+  } else {
+    var src=v==="dog"?"mascot-dog.png":"mascot-megaphone.png";
+    img.src=src;
+    coach.classList.add("has-mascot");
+  }
 }
 function setView(v){
   var w=document.getElementById("W");
