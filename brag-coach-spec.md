@@ -71,7 +71,7 @@ This is Satisfi's existing visitor experience agent. We are not redesigning it. 
 - All text: IBM Plex Mono (bot messages at 13px, prompts at 12px, display elements in Bold)
 - The monospace treatment is a deliberate contrast with travel mode's Noto Sans
 
-**Welcome state shows:** the coach avatar circle surrounded by scattered brand voice words (UNAPOLOGETIC, BOLD, CLEVER, PROUD, PASSIONATE) at various angles and sizes in DC's secondary colors. Below the circle: "READY. SET." in small caps, "BRAG" in large IBM Plex Mono Bold, and "Your Cleveland trash talk machine" in green (#5dd57a), IBM Plex Mono.
+**Welcome state shows:** the coach avatar circle centered. Below the circle: "READY. SET." in small caps, "BRAG" in large IBM Plex Mono Bold, then the brand voice words as a single centered line: "Passionate. Bold. Clever. Unapologetic. Proud." in IBM Plex Mono 12px #aaa. Below that: "Your Cleveland trash talk machine." in green (#5dd57a), and "Your Brag Coach." in #888. The words form a vertical stack that reads as a statement of identity, not scattered decoration.
 
 Below that, 4 prompt buttons whose text changes depending on which DC page the widget appears on.
 
