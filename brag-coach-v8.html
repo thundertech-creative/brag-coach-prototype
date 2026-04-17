@@ -27,6 +27,13 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
   display:flex;flex-direction:column;
   box-shadow:#bbb 0 0 10px;margin-top:10px;
 }
+/* FLOATING MASCOT PICKER */
+.mascot-picker{position:absolute;left:-52px;top:50%;transform:translateY(-50%);z-index:6;display:flex;flex-direction:column;gap:6px}
+.mascot-picker button{width:42px;height:42px;border-radius:50%;border:2px solid #333;background:#111;cursor:pointer;padding:0;overflow:hidden;opacity:0.6;transition:opacity .2s,border-color .2s}
+.mascot-picker button:hover{opacity:1;border-color:#666}
+.mascot-picker button.active{opacity:1;border-color:#f56115}
+.mascot-picker button img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.mascot-picker .mp-none{font-family:"IBM Plex Mono",monospace;font-size:16px;color:#f56115;display:flex;align-items:center;justify-content:center}
 /* MOBILE VIEW */
 .widget.mobile-view{width:375px;height:calc(100vh - 58px);max-height:none;border-radius:0}
 .widget.minimized .mode-bar,.widget.minimized .panels,.widget.minimized .w-input,.widget.minimized .powered{display:none}
@@ -107,18 +114,18 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
 .t-pr:hover{background:#1f4caf}
 
 /* ============ BRAG PANEL CONTENT ============ */
-.b-avatar{display:flex;align-items:center;justify-content:center;height:120px;flex-shrink:0}
+.b-avatar{display:flex;align-items:center;justify-content:center;height:220px;flex-shrink:0}
 .b-coach{
-  width:110px;height:110px;border-radius:50%;border:2px dashed #f56115;
+  width:200px;height:200px;border-radius:50%;border:2px dashed #f56115;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   background:#1a1a1a;
 }
-.b-coach-q{font-family:'IBM Plex Mono',monospace;font-size:36px;font-weight:700;color:#f56115}
+.b-coach-q{font-family:'IBM Plex Mono',monospace;font-size:54px;font-weight:700;color:#f56115}
 .b-mascot{width:100%;height:100%;border-radius:50%;object-fit:cover;display:none}
 .b-coach.has-mascot .b-coach-q,.b-coach.has-mascot .b-coach-lbl{display:none}
 .b-coach.has-mascot .b-mascot{display:block}
 .b-coach.has-mascot{border:none;overflow:hidden;background:transparent}
-.b-coach-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#f56115;text-transform:uppercase;letter-spacing:.1em}
+.b-coach-lbl{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#f56115;text-transform:uppercase;letter-spacing:.1em}
 @keyframes pop{0%{transform:scale(.8);opacity:0}40%{transform:scale(.9,1.12);opacity:1}60%{transform:scale(1.08,.92)}80%{transform:scale(.97,1.03)}100%{transform:scale(1)}}
 .b-coach.pop{animation:pop .5s cubic-bezier(.34,1.56,.64,1) both}
 
@@ -219,13 +226,6 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
   <button onclick="setPage('mabels',this)">Mabel's</button>
   <button onclick="setPage('music',this)">Music</button>
   <div class="sep"></div>
-  <span class="lb">Mascot</span>
-  <select onchange="setMascot(this.value)">
-    <option value="none">None</option>
-    <option value="dog">Dog</option>
-    <option value="mega">Megaphone</option>
-  </select>
-  <div class="sep"></div>
   <span class="lb">Transition</span>
   <select id="transSel" onchange="setTrans(this.value)">
     <option value="slide">Slide</option>
@@ -265,6 +265,13 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
   <!-- MODE BAR (single button, never inside panels) -->
   <div class="mode-bar">
     <button class="mode-btn to-brag" id="modeBtn" onclick="doSwitch()">Chat with Brag Coach</button>
+  </div>
+
+  <!-- MASCOT PICKER (floating left) -->
+  <div class="mascot-picker" id="mascotPicker">
+    <button class="active" onclick="setMascot('none',this)" title="Default"><span class="mp-none">?</span></button>
+    <button onclick="setMascot('dog',this)" title="Dog"><img src="mascot-dog.png" alt="Dog"></button>
+    <button onclick="setMascot('mega',this)" title="Megaphone"><img src="mascot-megaphone.png" alt="Megaphone"></button>
   </div>
 
   <!-- PANELS -->
@@ -348,16 +355,18 @@ function setDarkTex(v){
   w.classList.remove("dark-tex-a","dark-tex-b","dark-tex-c");
   if(v!=="off") w.classList.add("dark-tex-"+v);
 }
-function setMascot(v){
-  var coach=document.getElementById("coach");
-  var img=document.getElementById("mascotImg");
-  if(v==="none"){
-    coach.classList.remove("has-mascot");
-    img.src="";
+function setMascot(v,btn){
+  var coach=document.getElementById('coach');
+  var img=document.getElementById('mascotImg');
+  document.querySelectorAll('.mascot-picker button').forEach(function(b){b.classList.remove('active')});
+  if(btn) btn.classList.add('active');
+  if(v==='none'){
+    coach.classList.remove('has-mascot');
+    img.src='';
   } else {
-    var src=v==="dog"?"mascot-dog.png":"mascot-megaphone.png";
+    var src=v==='dog'?'mascot-dog.png':'mascot-megaphone.png';
     img.src=src;
-    coach.classList.add("has-mascot");
+    coach.classList.add('has-mascot');
   }
 }
 function setView(v){
