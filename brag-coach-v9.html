@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brag Coach v8</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding-top:58px}
+
+/* ============ OPTIONS BAR ============ */
+.opts{
+  position:fixed;top:0;left:0;right:0;z-index:9999;
+  background:#0a0a0a;border-bottom:1px solid #222;
+  display:flex;align-items:center;padding:0 20px;height:54px;gap:10px;overflow-x:auto;
+}
+.opts .lb{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#555;white-space:nowrap}
+.opts select,.opts button{font-family:'IBM Plex Mono',monospace;font-size:13px;background:#1a1a1a;color:#aaa;border:1px solid #333;padding:8px 16px;border-radius:2px;cursor:pointer;white-space:nowrap}
+.opts button.on{background:#f56115;border-color:#f56115;color:#fff}
+.opts .sep{width:1px;height:24px;background:#333;margin:0 4px;flex-shrink:0}
+
+/* ============ WIDGET ============ */
+.widget{
+  width:607px;max-width:95vw;height:calc(92vh - 58px);max-height:806px;
+  border-radius:20px;overflow:hidden;position:relative;
+  display:flex;flex-direction:column;
+  box-shadow:#bbb 0 0 10px;margin-top:10px;
+}
+/* FLOATING MASCOT PICKER */
+.widget-wrap{position:relative;display:inline-block}
+.mascot-picker{position:absolute;left:-52px;top:50%;transform:translateY(-50%);z-index:6;display:flex;flex-direction:column;gap:6px}
+.mascot-picker button{width:42px;height:42px;border-radius:50%;border:2px solid #333;background:#111;cursor:pointer;padding:0;overflow:hidden;opacity:0.6;transition:opacity .2s,border-color .2s}
+.mascot-picker button:hover{opacity:1;border-color:#666}
+.mascot-picker button.active{opacity:1;border-color:#f56115}
+.mascot-picker button img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.mascot-picker .mp-none{font-family:"IBM Plex Mono",monospace;font-size:16px;color:#f56115;display:flex;align-items:center;justify-content:center}
+/* MOBILE VIEW */
+.widget.mobile-view{width:375px;height:calc(100vh - 58px);max-height:none;border-radius:0}
+.widget.minimized .mode-bar,.widget.minimized .panels,.widget.minimized .w-input,.widget.minimized .powered{display:none}
+.widget.minimized{height:auto;min-height:0;max-height:none}
+
+/* ============ HEADER ============ */
+.w-header{
+  position:relative;z-index:5;padding:16px 20px;
+  display:flex;align-items:center;justify-content:center;
+  background:#000;min-height:60px;flex-shrink:0;
+}
+.w-logo{height:30px;display:flex;align-items:center}
+.w-logo svg{height:100%;width:auto}
+.min-btn{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:#666;font-size:20px;cursor:pointer;
+}
+.min-btn:hover{color:#fff}
+
+/* ============ MODE BAR (fixed between header and panels) ============ */
+.mode-bar{
+  position:relative;z-index:4;padding:10px 20px;flex-shrink:0;
+  transition:background .4s;height:58px;display:flex;align-items:center;
+}
+.widget:not(.brag-mode) .mode-bar{background:#F5F5F5}
+.widget.brag-mode .mode-bar{background:#161616}
+.mode-btn{
+  display:block;width:100%;padding:14px;text-align:center;height:38px;line-height:10px;
+  border-radius:50px;font-family:'Noto Sans',sans-serif;font-size:15px;font-weight:600;
+  cursor:pointer;border:none;transition:background .2s,color .2s,border-color .2s;
+}
+.mode-btn.to-brag{background:#c4792b;color:#fff}
+.mode-btn.to-brag:hover{background:#a8621e}
+.mode-btn.to-travel{background:transparent;border:1.5px solid #666;color:#ddd}
+.mode-btn.to-travel:hover{border-color:#fff;color:#fff}
+
+/* ============ PANELS ============ */
+.panels{position:relative;flex:1;overflow:hidden;z-index:1;min-height:0}
+.panel{position:absolute;inset:0;overflow-y:auto;display:flex;flex-direction:column;padding-right:4px}
+.panel::-webkit-scrollbar{width:4px}
+.panel::-webkit-scrollbar-thumb{border-radius:2px}
+.panel.travel{background:#F5F5F5;z-index:2}
+.panel.travel::-webkit-scrollbar-thumb{background:#C1C1C1}
+.panel.brag{background:#161616;z-index:1}
+.panel.brag::-webkit-scrollbar-thumb{background:#555}
+
+/* Paper texture */
+.widget.dark-tex-a .panel.brag{background-image:url(guardian-texture-pB.svg);background-repeat:repeat;background-size:360px auto}
+.widget.dark-tex-b .panel.brag{background-image:url(guardian-texture-B-texture.svg);background-repeat:repeat;background-size:160px auto}
+.widget.dark-tex-c .panel.brag{background-image:url(guardian-texture-C-warm.svg);background-repeat:repeat;background-size:160px auto}
+
+/* Slide transition */
+.widget.use-slide .panel{transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.widget.use-slide .panel.brag{transform:translateX(100%)}
+.widget.use-slide.brag-mode .panel.travel{transform:translateX(-100%)}
+.widget.use-slide.brag-mode .panel.brag{transform:translateX(0)}
+
+/* Wipe transition */
+.widget.use-wipe .panel.travel{transition:clip-path .4s cubic-bezier(.4,0,.2,1);clip-path:inset(0 0 0 0)}
+.widget.use-wipe .panel.brag{opacity:1}
+.widget.use-wipe.brag-mode .panel.travel{clip-path:inset(0 100% 0 0)}
+
+/* Wipe orange bar */
+.wipe-bar{position:absolute;inset:0;z-index:10;background:#f56115;transform:translateX(-101%);pointer-events:none}
+.wipe-bar.go{animation:wipeAcross .4s cubic-bezier(.4,0,.2,1) both}
+@keyframes wipeAcross{0%{transform:translateX(-101%)}45%{transform:translateX(0)}55%{transform:translateX(0)}100%{transform:translateX(101%)}}
+
+/* ============ TRAVEL PANEL CONTENT ============ */
+.t-avatar{display:flex;align-items:center;justify-content:center;padding:20px 20px 8px;height:120px;flex-shrink:0}
+.t-av-circle{width:80px;height:80px;border-radius:50%;border:2px solid #2d6bf1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff}
+.t-av-circle .t-av-txt{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;color:#2d6bf1}
+.t-av-circle .t-av-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#2d6bf1;text-transform:uppercase;letter-spacing:.1em}
+.t-intro{padding:8px 20px 16px;font-size:14px;line-height:1.6;color:#333}
+.t-prompts{padding:0 20px 16px;display:flex;flex-wrap:wrap;gap:8px}
+.t-pr{padding:10px 18px;border-radius:50px;border:none;background:#2d6bf1;color:#fff;font-family:'Noto Sans',sans-serif;font-size:14px;cursor:pointer}
+.t-pr:hover{background:#1f4caf}
+
+/* ============ BRAG PANEL CONTENT ============ */
+.b-avatar{display:flex;align-items:center;justify-content:center;height:220px;flex-shrink:0}
+.b-coach{
+  width:200px;height:200px;border-radius:50%;border:2px dashed #f56115;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:#1a1a1a;
+}
+.b-coach-q{font-family:'IBM Plex Mono',monospace;font-size:54px;font-weight:700;color:#f56115}
+.b-mascot{width:120%;height:120%;margin:-10%;object-fit:contain;display:none}
+.b-coach.has-mascot .b-coach-q,.b-coach.has-mascot .b-coach-lbl{display:none}
+.b-coach.has-mascot .b-mascot{display:block}
+.b-coach.has-mascot{border:none;overflow:hidden;background:transparent;border-radius:50%}
+.b-coach-lbl{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#f56115;text-transform:uppercase;letter-spacing:.1em}
+@keyframes pop{0%{transform:scale(.8);opacity:0}40%{transform:scale(.9,1.12);opacity:1}60%{transform:scale(1.08,.92)}80%{transform:scale(.97,1.03)}100%{transform:scale(1)}}
+.b-coach.pop{animation:pop .5s cubic-bezier(.34,1.56,.64,1) both}
+
+
+.b-text{text-align:center;padding:28px 20px 16px}
+.b-ready{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:#aaa}
+.b-name{font-family:'IBM Plex Mono',monospace;font-size:38px;font-weight:700;color:#fff;line-height:1}
+.b-traits{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:#aaa;margin-top:8px;letter-spacing:.05em}
+.b-sub{font-size:13px;color:#5dd57a;margin-top:6px;font-family:'IBM Plex Mono',monospace}
+.b-sub2{font-size:12px;color:#888;margin-top:2px;font-family:'IBM Plex Mono',monospace}
+
+.b-prompts{padding:0 20px 16px;display:flex;flex-wrap:wrap;gap:8px}
+.b-pr{padding:10px 16px;border-radius:50px;border:1.5px solid #666;background:#1a1a1a;color:#ddd;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;text-align:left}
+.b-pr:hover{border-color:#aaa;color:#fff;background:#222}
+
+
+/* ============ MESSAGES ============ */
+.msgs{padding:16px 20px;display:flex;flex-direction:column;gap:10px;flex:1;min-height:0}
+.msgs.hidden{display:none}
+.m-row{display:flex;gap:10px;align-items:flex-start;animation:fadeUp .3s ease both}
+.m-av{width:34px;height:34px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:2px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px}
+.m-av.travel-av{background:#2d6bf1;color:#fff}
+.m-av.brag-av{background:#1a1a1a;border:1.5px solid #f56115;color:#f56115;font-size:15px}
+
+.msg{max-width:82%;padding:12px 16px;font-family:'Noto Sans',sans-serif;font-size:14px;line-height:1.55;white-space:pre-wrap;animation:fadeUp .3s ease both}
+/* Travel msgs */
+.msg.bot-t{background:#dcdcdc;color:#000;border-radius:12px 12px 12px 2px}
+.msg.usr-t{background:#fff;color:#000;border-radius:12px 12px 2px 12px;align-self:flex-end}
+/* Brag msgs */
+.msg.bot-b{background:#222;color:#fff;border-radius:2px}
+.msg.usr-b{background:#333;color:#fff;border-radius:2px;align-self:flex-end}
+.msg.cap{border-left:3px solid #f56115}
+.msg .tags{color:#5da8f5;font-size:12px;margin-top:5px}
+.msg.df{border-left:3px solid #5dd57a}
+.msg.err{border-left:3px solid #eb3b26;color:#ff6b5a}
+.msg.ld{color:#f56115;font-style:italic}
+
+/* Comeback items */
+.cb-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.cb-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;background:#2a2a2a;border-radius:2px;border:1px solid #444}
+.cb-item:hover{border-color:#666}
+.cb-text{flex:1;font-size:14px;line-height:1.4;color:#fff}
+.cb-cp{font-size:11px;padding:5px 12px;border:1px solid #666;background:#222;color:#ddd;cursor:pointer;border-radius:2px;font-family:'IBM Plex Mono',monospace}
+.cb-cp:hover{border-color:#aaa;color:#fff}
+.cb-cp.done{border-color:#5dd57a;color:#5dd57a}
+
+/* Action buttons */
+.acts{display:flex;gap:6px;margin-top:8px;padding-top:7px;border-top:1px solid #444}
+.act-btn{font-size:11px;padding:4px 12px;border:1px solid #666;background:#222;color:#ddd;cursor:pointer;border-radius:2px;font-family:'IBM Plex Mono',monospace}
+.act-btn:hover{border-color:#aaa;color:#fff}
+.act-btn.copied{border-color:#5dd57a;color:#5dd57a}
+
+/* ============ INPUT ============ */
+.w-input{
+  position:relative;z-index:5;padding:12px 16px;
+  display:flex;gap:8px;align-items:center;flex-shrink:0;
+  background:#fff;border-top:1px solid #e0e0e0;
+  transition:background .4s,border-color .4s;
+}
+.widget.brag-mode .w-input{background:#161616;border-color:#333}
+.inp{
+  flex:1;border:1.5px solid #ddd;border-radius:50px;padding:14px 20px;
+  font-family:'Noto Sans',sans-serif;font-size:15px;color:#333;
+  outline:none;background:transparent;transition:border-color .3s,color .3s;
+}
+.inp:focus{border-color:#2d6bf1}
+.inp::placeholder{color:#999}
+.widget.brag-mode .inp{border-color:#444;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:14px}
+.widget.brag-mode .inp:focus{border-color:#5dd57a}
+.widget.brag-mode .inp::placeholder{color:#777}
+.snd{
+  width:44px;height:44px;border-radius:50%;border:none;flex-shrink:0;
+  background:#2d6bf1;color:#fff;font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .3s;
+}
+.snd:hover{background:#1f4caf}
+.widget.brag-mode .snd{background:#5dd57a;color:#161616}
+.widget.brag-mode .snd:hover{background:#49a860}
+
+.powered{
+  text-align:center;padding:6px;font-size:10px;flex-shrink:0;
+  color:#525252;background:#fff;transition:background .4s,color .4s;
+}
+.widget.brag-mode .powered{color:#555;background:#161616}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+
+<!-- OPTIONS BAR -->
+<div class="opts">
+  <span class="lb">Page</span>
+  <button class="on" onclick="setPage('home',this)">Home</button>
+  <button onclick="setPage('events',this)">Events</button>
+  <button onclick="setPage('downtown',this)">Downtown</button>
+  <button onclick="setPage('mabels',this)">Mabel's</button>
+  <button onclick="setPage('music',this)">Music</button>
+  <div class="sep"></div>
+  <span class="lb">Transition</span>
+  <select id="transSel" onchange="setTrans(this.value)">
+    <option value="slide">Slide</option>
+    <option value="wipe">Wipe</option>
+  </select>
+  <div class="sep"></div>
+  <div class="sep"></div>
+  <span class="lb">View</span>
+  <select onchange="setView(this.value)"><option value="desktop">Desktop</option><option value="mobile">Mobile</option></select>
+  <div class="sep"></div>
+  <span class="lb">Dark Tex</span>
+  <select onchange="setDarkTex(this.value)">
+    <option value="a" selected>Guardian</option>
+    <option value="off">None</option>
+    <option value="b">Texture</option>
+    <option value="c">Warm</option>
+  </select>
+</div>
+
+<!-- WIDGET -->
+<div class="widget-wrap">
+<div class="mascot-picker" id="mascotPicker">
+  <button class="active" onclick="setMascot('none',this)" title="Default"><span class="mp-none">?</span></button>
+  <button onclick="setMascot('doga',this)" title="Dog A"><img src="mascot-doga.png" alt="Dog A"></button>
+  <button onclick="setMascot('dogb',this)" title="Dog B"><img src="mascot-dogb.png" alt="Dog B"></button>
+  <button onclick="setMascot('guardian',this)" title="Guardian"><img src="mascot-guardian.png" alt="Guardian"></button>
+  <button onclick="setMascot('mega',this)" title="Megaphone"><img src="mascot-megaphone.png" alt="Megaphone"></button>
+</div>
+<div class="widget use-slide dark-tex-a" id="W">
+  <div class="wipe-bar" id="wipeBar"></div>
+
+  <!-- HEADER -->
+  <div class="w-header">
+    <div class="w-logo"><svg xmlns="http://www.w3.org/2000/svg" fill="#ffffff" viewBox="0 0 48 24"><path d="M3.953,20.053c-2.35-3.568,1.517-8.37,5.097-9.157l1.086,1.346l-0.732,2.034l1.827-0.689l0.695-1.698 l-1.681-2.06c-0.194,0.07-13.259,3.064-9.222,10.63c4.341,8.136,18.259-3.845,23.744-1.401l0.696-2.345 C18.145,15.359,8.178,26.468,3.953,20.053z"/><path d="M11.222,19.54c0.795,0.048,1.793-1.274,2.317-2.066c0.043,0.099,0.096,0.195,0.162,0.288 c0.837,1.191,2.364,0.897,3.995-1.999c2.139-3.518-0.511,1.964,1.83,1.114c2.116-0.768,3.06-5.589,3.06-5.589l-1.338,0.458 c-0.428,4.09-1.978,4.482-1.978,4.482s0.679-1.315,0.679-2.408c0-1.094-0.353-1.503-0.717-1.414 c-0.678,0.165-1.122,1.901-2.056,3.217c-0.274,0.386-1.934,2.327-2.164,0.852c0,0,2.825-0.991,1.904-2.959 c-0.489-1.044-3.564,1.459-3.5,3.181c0.002,0.064-0.702,1.319-1.08,1.298c-0.463-0.026,2.242-6.801,2.242-6.801l-1.612,0.515 l-2.362,6.389C10.604,18.099,10.09,19.471,11.222,19.54z M16.325,14.237c0.154,0.926-1.004,1.523-1.004,1.523 C14.756,15.764,16.222,13.619,16.325,14.237z"/><path d="M44.047,7.414c-0.463-0.027,2.11-6.686,2.11-6.686l-1.612,0.539L43.38,4.534l-0.005,0.002L43.216,4.9 c-1.038-0.749-2.808,0.763-3.499,2.43c-0.076,0.184-0.142,0.402-0.188,0.596c-0.289,0.869-1.035,2.039-1.275,1.947 c-0.749-0.29,1.259-3.186,0.522-3.642c-0.866-0.536-2.309,1.264-2.309,1.264l0.257-0.742l-1.099,0.353l-0.956,2.74 c-0.416,0.972-0.911,1.784-1.393,1.686c-0.749-0.152,1.13-4.036,1.13-4.036l-1.34,0.449l-0.158,0.364 c-1.038-0.749-2.808,0.763-3.499,2.43c-0.13,0.314-0.615,1.022-1.021,1.528c-0.195,0.22-0.352,0.361-0.421,0.357 c-0.463-0.026,2.114-6.541,2.114-6.541l-1.612,0.515l-1.817,5.057l-0.069,0.165c0,0-2.415,3.838-2.733,1.799 c0,0,2.825-0.991,1.904-2.959c-0.566-1.209-4.631,2.23-3.216,4.246c0.77,1.097,1.991,0.673,3.585-1.66 c-0.006,0.068-0.007,0.145-0.003,0.224c0.023,0.378,0.189,0.821,0.738,0.807c0.441-0.011,1.032-0.57,1.304-0.878 c0.37-0.388,0.709-0.852,0.957-1.221c-0.043,0.406,0.021,0.982,0.432,1.128c1.106,0.393,2.244-1.036,2.588-1.517 c0.068-0.095,0,0,0,0c0.431,1.656,1.746-0.075,2.006-0.441l-0.257,0.783l1.289-0.433c0.477-1.302,1.112-3.498,2.197-3.677 c0.675-0.111-0.806,2.147,0.124,2.694c0.852,0.501,1.782-1.091,1.968-1.309c0.06,0.224,0.18,0.416,0.393,0.492 c0.96,0.341,1.943-0.689,2.411-1.283c0.092,0.221,0.286,0.395,0.66,0.42c1.553,0.106,2.676-2.768,2.676-2.768l-0.412,0.072 C45.196,6.336,44.51,7.441,44.047,7.414z M25.163,11.379c0.154,0.927-1.004,1.523-1.004,1.523 C23.593,12.906,25.06,10.761,25.163,11.379z M32.171,10.317c-1.264,2.474-2.619,1.614-1.484-0.202 c1.008-1.613,1.961-1.063,1.961-1.063L32.171,10.317z M40.995,6.707c1.008-1.613,1.961-1.063,1.961-1.063l-0.476,1.264 C41.215,9.382,39.86,8.522,40.995,6.707z"/><path d="M47.119,0.667c0.351,0,0.631,0.286,0.631,0.636c0,0.356-0.28,0.639-0.634,0.639 c-0.351,0-0.636-0.283-0.636-0.639c0-0.351,0.286-0.636,0.636-0.636H47.119z M47.114,0.794c-0.266,0-0.481,0.229-0.481,0.512 c0,0.286,0.215,0.509,0.484,0.509c0.269,0.003,0.486-0.223,0.486-0.509c0-0.283-0.218-0.512-0.486-0.512H47.114z M47.006,1.674 h-0.15V0.967c0.057-0.009,0.119-0.02,0.226-0.02c0.122,0,0.195,0.02,0.243,0.057c0.04,0.031,0.062,0.079,0.062,0.153 c0,0.085-0.059,0.144-0.136,0.164v0.006c0.062,0.011,0.102,0.068,0.113,0.173c0.014,0.11,0.028,0.153,0.04,0.175h-0.156 c-0.017-0.025-0.028-0.088-0.042-0.184c-0.011-0.076-0.057-0.107-0.133-0.107h-0.068V1.674z M47.006,1.267h0.071 c0.088,0,0.156-0.028,0.156-0.102c0-0.059-0.042-0.105-0.144-0.105c-0.037,0-0.062,0-0.082,0.003V1.267z"/></svg></div>
+    <button class="min-btn" onclick="toggleMin()">&#8722;</button>
+  </div>
+
+  <!-- MODE BAR (single button, never inside panels) -->
+  <div class="mode-bar">
+    <button class="mode-btn to-brag" id="modeBtn" onclick="doSwitch()">Chat with Brag Coach</button>
+  </div>
+
+  <!-- PANELS -->
+  <div class="panels">
+    <!-- TRAVEL -->
+    <div class="panel travel" id="pTravel">
+      <div class="t-avatar"><div class="t-av-circle"><span class="t-av-txt">DC</span><span class="t-av-lbl">Travel Agent</span></div></div>
+      <div class="t-intro">Hi there! You know those places only the locals know? Let our Destination Cleveland virtual assistant or a live CLE Concierge help you find them with suggestions on things to do, events to attend, restaurants, maps, and other tips.</div>
+      <div class="t-prompts">
+        <button class="t-pr" onclick="travelTap(this.textContent)">Things to Do</button>
+        <button class="t-pr" onclick="travelTap(this.textContent)">Events</button>
+        <button class="t-pr" onclick="travelTap(this.textContent)">2026 Brewery Passport</button>
+        <button class="t-pr" onclick="travelTap(this.textContent)">Trip Planner</button>
+        <button class="t-pr" onclick="travelTap(this.textContent)">Download Our App</button>
+        <button class="t-pr" onclick="travelTap(this.textContent)">Chat With Live CLE Concierge</button>
+      </div>
+      <div class="msgs hidden" id="tMsgs"></div>
+    </div>
+
+    <!-- BRAG -->
+    <div class="panel brag" id="pBrag">
+      <div class="b-avatar">
+        <div class="b-coach" id="coach"><div class="b-coach-q">?</div><div class="b-coach-lbl">Coach</div><img class="b-mascot" id="mascotImg" src="" alt=""></div>
+      </div>
+      <div class="b-text">
+        <div class="b-ready">READY. SET.</div>
+        <div class="b-name">BRAG</div>
+        <div class="b-traits"><span style="color:#eb3b26">Passionate.</span> <span style="color:#fff">Bold.</span> <span style="color:#5dd57a">Clever.</span> <span style="color:#f56115">Unapologetic.</span> <span style="color:#2d6cf0">Proud.</span></div>
+        <div class="b-sub">Your Cleveland trash talk machine.</div>
+        <div class="b-sub2">Your Brag Coach.</div>
+      </div>
+      <div class="b-prompts" id="bPrompts"></div>
+      <div class="msgs hidden" id="bMsgs"></div>
+    </div>
+  </div>
+
+  <!-- INPUT -->
+  <div class="w-input">
+    <input class="inp" id="inp" placeholder="How can I help you?" onkeydown="if(event.key==='Enter')send()">
+    <button class="snd" onclick="send()">&#8593;</button>
+  </div>
+  <div class="powered">Powered By Satisfi Labs</div>
+</div>
+</div>
+
+<script>
+let mode='travel', page='home', trans='slide';
+
+const PAGES={
+  home:{prompts:["Hype me up about Cleveland","Give me a comeback for haters","Write me an Instagram caption","Craft a DM inviting my friend to visit Cleveland"]},
+  events:{prompts:["Write a caption for tonight's event","Roast someone who says CLE has nothing going on","Hype up the Guardians home opener","Tell me something fun this weekend"]},
+  downtown:{prompts:["Caption for my E. 4th Street pic","Comeback for \"downtown is dead\"","Best brag about Playhouse Square","Where should I eat downtown?"]},
+  mabels:{prompts:["Instagram caption for this brisket","Why is Cleveland BBQ better than Texas?","DM to send my friend about this place","What else should I try downtown?"]},
+  music:{prompts:["Caption for my Rock Hall visit","Roast someone who says CLE has no music scene","Brag about the Cleveland Orchestra","TikTok idea for a concert tonight"]}
+};
+
+const R={
+"Hype me up about Cleveland":"Cleveland\u2019s food scene is built like the city itself: tough, creative, and allergic to being boring.\n\nStart Downtown where chefs are putting new-school twists on old-school comfort, then go chase the classics like corned beef and the legendary Polish Boy.\n\nGot a sweet tooth? Go hunt down locally made ice cream, Hong Kong street waffles, or beer-infused donuts at Brewnuts.",
+"Write me an Instagram caption":"Golden hour over The Land and the skyline\u2019s doing what it does: showing off like it earned it, because it did.\n\nCleveland doesn\u2019t pose. Cleveland puts in work, then lets the sunset handle the flex.\n\n#ThisIsCleveland #TheLand #ClevelandRocks",
+"Give me a comeback for haters":"Say it with your chest. Cleveland doesn\u2019t need hype. Cleveland produces receipts.\n\n\"Talk all you want. Cleveland keeps building while you\u2019re still tweeting.\"\n\"Cleveland\u2019s an underdog city. We don\u2019t whine, we win.\"\n\"You ever actually been, or you just recycling jokes from 2009?\"\n\"If Cleveland\u2019s so bad, why do people never shut up about it?\"",
+"Craft a DM inviting my friend to visit Cleveland":"Here\u2019s a DM you can copy paste:\n\nYo. Stop acting like Cleveland is optional. Pull up for a weekend and I\u2019ll prove it. We\u2019re talking lakefront views, real neighborhoods, food that hits and the kind of underdog energy that makes everything feel earned.",
+"Instagram caption for this brisket":"\"Michael Symon put Bertman\u2019s ballpark mustard in the BBQ sauce and called it Cleveland-style. This is what happens when a city refuses to play by the rules.\"\n\n#MabelsBBQ #ClevelandBBQ #MichaelSymon",
+"Caption for my Rock Hall visit":"\"History on the walls, future in the speakers. Rock Hall, Cleveland.\"\n\nPunchier: \"Making a legendary moment at the Rock & Roll Hall of Fame.\"\n\n#RockOn #ClevelandRocks #RockHall"
+};
+
+const LOADING=["Cooking up something good...","Sharpening the trash talk...","Consulting the Guardians...","Checking with the bridge..."];
+const DEFLECT_WORDS=["weather","crime","lebron","politics","directions","population"];
+const DEFLECT_MSG="That\u2019s outside my lane. I\u2019m your Cleveland brag coach: trash talk, captions, and comebacks.";
+const AV='<div class="m-av brag-av">?</div>';
+
+// === OPTIONS ===
+function setPage(p,btn){
+  page=p;
+  document.querySelectorAll('.opts button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderPrompts();
+  if(mode==='brag') doSwitch();
+}
+function setTrans(t){trans=t;const w=document.getElementById('W');w.classList.remove('use-slide','use-wipe');w.classList.add('use-'+t)}
+function setDarkTex(v){
+  var w=document.getElementById("W");
+  w.classList.remove("dark-tex-a","dark-tex-b","dark-tex-c");
+  if(v!=="off") w.classList.add("dark-tex-"+v);
+}
+function setMascot(v,btn){
+  var coach=document.getElementById('coach');
+  var img=document.getElementById('mascotImg');
+  document.querySelectorAll('.mascot-picker button').forEach(function(b){b.classList.remove('active')});
+  if(btn) btn.classList.add('active');
+  if(v==='none'){
+    coach.classList.remove('has-mascot');
+    img.src='';
+  } else {
+    var srcs={doga:'mascot-doga.png',dogb:'mascot-dogb.png',guardian:'mascot-guardian.png',mega:'mascot-megaphone.png'};
+    var src=srcs[v]||'mascot-doga.png';
+    img.src=src;
+    coach.classList.add('has-mascot');
+  }
+}
+function setView(v){
+  var w=document.getElementById("W");
+  w.classList.toggle("mobile-view",v==="mobile");
+}
+
+
+// === MODE SWITCHING ===
+function doSwitch(){
+  const next=mode==='travel'?'brag':'travel';
+  const w=document.getElementById('W');
+
+  // Reset messages
+  document.getElementById('tMsgs').classList.add('hidden');
+  document.getElementById('tMsgs').innerHTML='';
+  document.getElementById('bMsgs').classList.add('hidden');
+  document.getElementById('bMsgs').innerHTML='';
+
+  if(trans==='wipe'){
+    const bar=document.getElementById('wipeBar');
+    bar.classList.remove('go');void bar.offsetWidth;bar.classList.add('go');
+    setTimeout(()=>{applyMode(next)},180);
+    bar.addEventListener('animationend',()=>bar.classList.remove('go'),{once:true});
+  } else {
+    applyMode(next);
+  }
+}
+function applyMode(m){
+  mode=m;
+  const w=document.getElementById('W');
+  const btn=document.getElementById('modeBtn');
+  if(m==='brag'){
+    w.classList.add('brag-mode');
+    btn.className='mode-btn to-travel';
+    btn.textContent='\u2190 Back to Travel Agent';
+    document.getElementById('inp').placeholder='Talk trash, ask for a caption...';
+    setTimeout(()=>{const c=document.getElementById('coach');c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop')},trans==='wipe'?0:300);
+  } else {
+    w.classList.remove('brag-mode');
+    btn.className='mode-btn to-brag';
+    btn.textContent='Chat with Brag Coach';
+    document.getElementById('inp').placeholder='How can I help you?';
+  }
+}
+
+// === PROMPTS ===
+function renderPrompts(){
+  const el=document.getElementById('bPrompts');
+  el.innerHTML=PAGES[page].prompts.map(p=>'<button class="b-pr" onclick="bragTap(this.textContent)">'+p+'</button>').join('');
+}
+
+// === SCROLL ===
+function scroll(panel){
+  document.getElementById(panel==='brag'?'pBrag':'pTravel').scrollTop=99999;
+}
+
+// === TRAVEL TAP ===
+function travelTap(t){
+  const m=document.getElementById('tMsgs');m.classList.remove('hidden');
+  m.innerHTML+='<div class="msg usr-t" style="align-self:flex-end">'+t+'</div>';
+  scroll('travel');
+  setTimeout(()=>{m.innerHTML+='<div class="m-row"><div class="m-av travel-av">DC</div><div class="msg bot-t">[Travel agent response would appear here.]</div></div>';scroll('travel')},800);
+}
+
+// === BRAG TAP ===
+function bragTap(t){
+  const m=document.getElementById('bMsgs');
+  m.classList.remove('hidden');
+  m.querySelectorAll('.b-prompts').forEach(el=>el.remove());
+  m.innerHTML+='<div class="msg usr-b" style="align-self:flex-end">'+t+'</div>';
+  scroll('brag');
+
+  // Deflection
+  if(DEFLECT_WORDS.some(w=>t.toLowerCase().includes(w))){
+    setTimeout(()=>{
+      m.innerHTML+='<div class="m-row">'+AV+'<div class="msg bot-b df">'+DEFLECT_MSG+'<div style="margin-top:8px"><a onclick="doSwitch()" style="font-size:12px;color:#5dd57a;cursor:pointer;text-decoration:underline">Try Travel Agent</a></div></div></div>';
+      addFollowUps(t);scroll('brag');
+    },600);return;
+  }
+  // Error test
+  if(t.toLowerCase()==='error'){
+    setTimeout(()=>{m.innerHTML+='<div class="m-row">'+AV+'<div class="msg bot-b err">Hold on, even hype men need a second sometimes. Try again?</div></div>';scroll('brag')},800);return;
+  }
+  // Loading
+  var lt=LOADING[Math.floor(Math.random()*LOADING.length)];
+  var lid='ld'+Date.now();
+  m.innerHTML+='<div class="m-row" id="'+lid+'">'+AV+'<div class="msg bot-b ld" style="animation:pulse 1.2s ease-in-out infinite">'+lt+'</div></div>';
+  scroll('brag');
+
+  setTimeout(()=>{
+    var el=document.getElementById(lid);if(!el)return;
+    var r=R[t]||"Cleveland\u2019s got more going on than your city has excuses. Ask me something specific.";
+    var tl=t.toLowerCase();
+    var fmt=tl.includes('dm')||tl.includes('inviting')?'dm':(tl.includes('comeback')||tl.includes('roast')||tl.includes('hater'))&&r.includes('"')?'comeback':(tl.includes('caption')||tl.includes('instagram'))&&r.includes('#')?'caption':'default';
+    var inner;
+
+    if(fmt==='comeback'){
+      var lines=r.split('\n'),intro='',items=[];
+      lines.forEach(function(l){var s=l.trim();if(s.charAt(0)==='"'&&s.charAt(s.length-1)==='"')items.push(s.slice(1,-1));else if(s.length>0)intro+=s+' '});
+      var h='<div class="msg bot-b">'+intro.trim()+'<div class="cb-list">';
+      items.forEach(function(i){h+='<div class="cb-item"><div class="cb-text">\u201c'+i+'\u201d</div><button class="cb-cp" onclick="cpItem(this,\''+i.replace(/'/g,"\\'")+'\')">Copy</button></div>'});
+      h+='</div>'+actBtns()+'</div>';inner=h;
+    } else if(fmt==='caption'){
+      var pts=r.split(/\n\n(?=#)/);
+      inner='<div class="msg bot-b cap">'+pts[0]+(pts[1]?'<div class="tags">'+pts[1]+'</div>':'')+actBtns()+'</div>';
+    } else if(fmt==='dm'){
+      var dmText=r.replace(/^.*copy paste.*?\n\n/i,'');
+      inner='<div class="msg bot-b"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#999;margin-bottom:6px;font-family:IBM Plex Mono,monospace">\u2709 Ready to paste</div>'+dmText+actBtns()+'</div>';
+    } else {
+      inner='<div class="msg bot-b">'+r+actBtns()+'</div>';
+    }
+    el.outerHTML='<div class="m-row">'+AV+inner+'</div>';
+    addFollowUps(t);scroll('brag');
+  },1400);
+}
+
+function actBtns(){return '<div class="acts"><button class="act-btn" onclick="cpMsg(this)">\ud83d\udccb Copy</button></div>'}
+
+function addFollowUps(orig){
+  var m=document.getElementById('bMsgs');
+  var fu=PAGES[page].prompts.filter(function(p){return p!==orig}).slice(0,2);
+  if(!fu.length)return;
+  var h='<div class="b-prompts" style="padding:4px 0">';
+  fu.forEach(function(p){h+='<button class="b-pr" onclick="bragTap(this.textContent)">'+p+'</button>'});
+  h+='</div>';m.innerHTML+=h;scroll('brag');
+}
+
+function cpMsg(btn){
+  var t=btn.closest('.msg');
+  var text=t.childNodes[0]?t.childNodes[0].textContent:'';
+  navigator.clipboard.writeText(text).then(function(){
+    btn.classList.add('copied');btn.textContent='\u2713 Copied!';
+    setTimeout(function(){btn.classList.remove('copied');btn.textContent='\ud83d\udccb Copy'},2000);
+  });
+}
+function cpItem(btn,text){
+  navigator.clipboard.writeText(text).then(function(){
+    btn.classList.add('done');btn.textContent='\u2713';
+    setTimeout(function(){btn.classList.remove('done');btn.textContent='Copy'},2000);
+  });
+}
+function send(){var i=document.getElementById('inp'),t=i.value.trim();if(!t)return;i.value='';if(mode==='brag')bragTap(t);else travelTap(t)}
+
+// Init
+renderPrompts();
+</script>
+</body>
+</html>
