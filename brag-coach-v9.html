@@ -111,6 +111,8 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
 .t-prompts{padding:0 20px 16px;display:flex;flex-wrap:wrap;gap:8px}
 .t-pr{padding:10px 18px;border-radius:50px;border:none;background:#2d6bf1;color:#fff;font-family:'Noto Sans',sans-serif;font-size:14px;cursor:pointer}
 .t-pr:hover{background:#1f4caf}
+.t-pr-brag{display:block;width:calc(100% - 40px);margin:0 20px 16px;padding:12px 18px;border-radius:50px;border:none;background:#5ed47b;color:#111;font-family:'Noto Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-align:center}
+.t-pr-brag:hover{background:#49c068}
 
 /* ============ BRAG PANEL CONTENT ============ */
 .b-avatar{display:flex;align-items:center;justify-content:center;height:220px;flex-shrink:0}
@@ -225,13 +227,6 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
   <button onclick="setPage('mabels',this)">Mabel's</button>
   <button onclick="setPage('music',this)">Music</button>
   <div class="sep"></div>
-  <span class="lb">Transition</span>
-  <select id="transSel" onchange="setTrans(this.value)">
-    <option value="slide">Slide</option>
-    <option value="wipe">Wipe</option>
-  </select>
-  <div class="sep"></div>
-  <div class="sep"></div>
   <span class="lb">View</span>
   <select onchange="setView(this.value)"><option value="desktop">Desktop</option><option value="mobile">Mobile</option></select>
   <div class="sep"></div>
@@ -281,6 +276,7 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
         <button class="t-pr" onclick="travelTap(this.textContent)">Download Our App</button>
         <button class="t-pr" onclick="travelTap(this.textContent)">Chat With Live CLE Concierge</button>
       </div>
+      <button class="t-pr-brag" onclick="doSwitch()">💬 Chat with the Brag Coach!</button>
       <div class="msgs hidden" id="tMsgs"></div>
     </div>
 
