@@ -113,6 +113,8 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
 .t-pr:hover{background:#1f4caf}
 .t-pr-brag{align-self:flex-start;margin:0 20px 16px;padding:10px 20px;border-radius:8px;border:none;background:#5ed47b;color:#111;font-family:'Noto Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
 .t-pr-brag:hover{background:#49c068}
+@keyframes brag-jiggle{0%,100%{transform:rotate(0)}20%{transform:rotate(-4deg)}40%{transform:rotate(4deg)}60%{transform:rotate(-3deg)}80%{transform:rotate(3deg)}}
+.t-pr-brag{animation:brag-jiggle .6s ease 1.5s both}
 
 /* ============ BRAG PANEL CONTENT ============ */
 .b-avatar{display:flex;align-items:center;justify-content:center;height:220px;flex-shrink:0}
