@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brag Coach Widget v7</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding-top:58px}
+
+/* OPTIONS BAR */
+.opts{position:fixed;top:0;left:0;right:0;z-index:9999;background:#0a0a0a;border-bottom:1px solid #222;display:flex;align-items:center;padding:0 20px;height:54px;gap:10px;overflow-x:auto}
+.opts .lb{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#555;white-space:nowrap}
+.opts select,.opts button{font-family:'IBM Plex Mono',monospace;font-size:13px;background:#1a1a1a;color:#aaa;border:1px solid #333;padding:8px 16px;border-radius:2px;cursor:pointer;white-space:nowrap}
+.opts button.on{background:#f56115;border-color:#f56115;color:#fff}
+.opts .sep{width:1px;height:20px;background:#333;margin:0 6px;flex-shrink:0}
+
+/* WIDGET */
+.widget{width:506px;max-width:95vw;height:calc(85vh - 58px);max-height:720px;border-radius:20px;overflow:hidden;position:relative;display:flex;flex-direction:column;box-shadow:#bbb 0 0 10px;margin-top:10px}
+
+/* HEADER */
+/* MODE SWITCH BAR (fixed, between header and panels) */
+.mode-bar{position:relative;z-index:5;padding:10px 20px;transition:background .4s}
+.widget:not(.brag-mode) .mode-bar{background:#F5F5F5}
+.widget.brag-mode .mode-bar{background:#161616}
+.mode-bar .mode-btn{margin:0}
+
+/* MINIMIZE */
+.widget.minimized .panels,.widget.minimized .w-input,.widget.minimized .powered,.widget.minimized .mode-bar{display:none}
+.widget.minimized{height:60px;min-height:60px;max-height:60px}
+.minimize-btn{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:18px;cursor:pointer;z-index:6}
+.minimize-btn:hover{color:#fff}
+
+/* PAPER TEXTURE */
+.widget.paper-bg .panel.travel{background-image:url(paper-texture.jpg);background-size:cover}
+.w-header{position:relative;z-index:5;padding:16px 20px;display:flex;align-items:center;justify-content:center;background:#000;min-height:60px}
+.w-logo{height:30px;display:flex;align-items:center}
+.w-logo svg{height:100%;width:auto}
+
+/* PANELS */
+.panels{position:relative;flex:1;overflow:hidden;z-index:1}
+.panel{position:absolute;inset:0;overflow-y:auto;display:flex;flex-direction:column}
+.panel::-webkit-scrollbar{width:4px}
+.panel::-webkit-scrollbar-thumb{border-radius:2px}
+.panel.travel{background:#F5F5F5;z-index:2}
+.panel.travel::-webkit-scrollbar-thumb{background:#C1C1C1}
+.panel.brag{background:#161616;z-index:1}
+.panel.brag::-webkit-scrollbar-thumb{background:#555}
+
+/* SLIDE */
+.widget.use-slide .panel.travel{transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.widget.use-slide .panel.brag{transition:transform .35s cubic-bezier(.4,0,.2,1);transform:translateX(100%)}
+.widget.use-slide.brag-mode .panel.travel{transform:translateX(-100%)}
+.widget.use-slide.brag-mode .panel.brag{transform:translateX(0)}
+
+/* WIPE */
+.widget.use-wipe .panel.travel{transition:clip-path .4s cubic-bezier(.4,0,.2,1);clip-path:inset(0 0 0 0)}
+.widget.use-wipe .panel.brag{opacity:1}
+.widget.use-wipe.brag-mode .panel.travel{clip-path:inset(0 100% 0 0)}
+
+/* WELCOME CONTENT: fixed height so button lands in same spot */
+
+/* MODE BUTTON: identical styling base, different colors */
+.mode-btn{display:block;margin:0 20px 12px;padding:14px;text-align:center;border-radius:50px;font-family:'Noto Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:none;flex-shrink:0}
+.mode-btn.to-brag{background:#c4792b;color:#fff}
+.mode-btn.to-brag:hover{background:#a8621e}
+.mode-btn.to-travel{background:transparent;border:1.5px solid #666;color:#ddd;margin:0 20px 12px}
+.mode-btn.to-travel:hover{border-color:#fff;color:#fff}
+
+/* TRAVEL */
+.t-agent-stage{display:flex;align-items:center;justify-content:center;height:180px}
+.t-agent{width:90px;height:90px;border-radius:50%;border:2px solid #2d6bf1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff}
+.t-agent-q{font-family:"IBM Plex Mono",monospace;font-size:32px;font-weight:700;color:#2d6bf1}
+.t-agent-label{font-family:"IBM Plex Mono",monospace;font-size:9px;color:#2d6bf1;margin-top:2px;text-transform:uppercase;letter-spacing:.1em}
+.t-intro{padding:12px 20px;font-size:14px;line-height:1.6;color:#333;overflow:hidden;display:flex;align-items:center}
+.t-prompts{padding:0 20px 20px;display:flex;flex-wrap:wrap;gap:8px}
+.t-pr{padding:10px 18px;border-radius:50px;border:none;background:#2d6bf1;color:#fff;font-family:'Noto Sans',sans-serif;font-size:14px;cursor:pointer}
+.t-pr:hover{background:#1f4caf}
+
+/* BRAG WELCOME */
+.b-stage{position:relative;width:100%;height:180px}
+.b-coach{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:90px;height:90px;border-radius:50%;border:2px dashed #f56115;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1a1a1a}
+.b-coach-q{font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:700;color:#f56115}
+.b-coach-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#f56115;margin-top:2px;text-transform:uppercase;letter-spacing:.1em}
+@keyframes squashPop{0%{transform:translate(-50%,-50%) scale(.8);opacity:0}40%{transform:translate(-50%,-50%) scale(.9,1.12);opacity:1}60%{transform:translate(-50%,-50%) scale(1.08,.92)}80%{transform:translate(-50%,-50%) scale(.97,1.03)}100%{transform:translate(-50%,-50%) scale(1)}}
+.b-coach.pop{animation:squashPop .5s cubic-bezier(.34,1.56,.64,1) both}
+
+.b-word{position:absolute;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.b-w1{top:12px;left:8px;font-size:14px;transform:rotate(-8deg);color:#f56115}
+.b-w2{top:25px;right:10px;font-size:17px;transform:rotate(5deg);color:#fff}
+.b-w3{bottom:35px;left:6px;font-size:12px;transform:rotate(-4deg);color:#5dd57a}
+.b-w4{bottom:15px;right:18px;font-size:15px;transform:rotate(7deg);color:#2d6cf0}
+.b-w5{top:70px;left:14px;font-size:10px;transform:rotate(-12deg);color:#eb3b26}
+
+.b-text{text-align:center;padding:0 20px;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.b-ready{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:#aaa}
+.b-name{font-family:'IBM Plex Mono',monospace;font-size:42px;font-weight:700;color:#fff;line-height:1}
+.b-sub{font-size:13px;color:#5dd57a;margin:6px 0 0}
+
+/* BRAG PROMPTS: WCAG contrast fix */
+.b-prompts{padding:8px 20px 20px;display:flex;flex-wrap:wrap;gap:8px}
+.b-pr{padding:10px 16px;border-radius:50px;border:1.5px solid #666;background:#1a1a1a;color:#ddd;font-family:'Noto Sans',sans-serif;font-size:13px;cursor:pointer;text-align:left}
+.b-pr:hover{border-color:#aaa;color:#fff;background:#222}
+
+/* BACK STRIP */
+.back-strip{display:none;padding:8px 20px;background:rgba(22,22,22,.95);border-bottom:1px solid #333;position:sticky;top:0;z-index:3}
+.back-strip.show{display:flex;align-items:center}
+.back-strip a{font-size:12px;color:#aaa;cursor:pointer;text-decoration:none}
+.back-strip a:hover{color:#fff}
+
+/* MESSAGES */
+.msgs{flex:1;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.msgs.hidden{display:none}
+.m-row{display:flex;gap:10px;align-items:flex-start;animation:fu .3s ease both}
+.m-av{width:36px;height:36px;flex-shrink:0;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.m-av.t{background:#2d6bf1;color:#fff;font-size:11px;font-weight:700}
+.m-av.b{background:#1a1a1a;border:1.5px solid #f56115}
+.m-av.b .av-q{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;color:#f56115}
+.m{max-width:82%;padding:12px 16px;font-family:'Noto Sans',sans-serif;font-size:14px;line-height:1.55;white-space:pre-wrap;animation:fu .3s ease both}
+.m.bot-t{background:#dcdcdc;color:#000;border-radius:12px 12px 12px 2px}
+.m.usr-t{background:#fff;color:#000;border-radius:12px 12px 2px 12px;align-self:flex-end}
+.m.bot-b{background:#222;color:#fff;border-radius:2px}
+.m.usr-b{background:#333;color:#fff;border-radius:2px;align-self:flex-end}
+.m.cap{border-left:3px solid #f56115}
+.m .tags{color:#5da8f5;font-size:12px;margin-top:5px}
+.m.df{border-left:3px solid #5dd57a}
+.m.err{border-left:3px solid #eb3b26;color:#ff6b5a}
+.m.ld{color:#f56115;font-style:italic}
+.cb-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.cb-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;background:#2a2a2a;border-radius:2px;border:1px solid #444}
+.cb-item:hover{border-color:#666}
+.cb-item .cb-text{flex:1;font-size:14px;line-height:1.4;color:#fff}
+.cb-item .cb-cp{font-size:11px;padding:5px 12px;border:1px solid #666;background:#222;color:#ddd;cursor:pointer;border-radius:2px;font-family:'IBM Plex Mono',monospace}
+.cb-item .cb-cp:hover{border-color:#aaa;color:#fff}
+.cb-item .cb-cp.done{border-color:#5dd57a;color:#5dd57a}
+.acts{display:flex;gap:6px;margin-top:8px;padding-top:7px;border-top:1px solid #444}
+.ab{font-size:11px;padding:4px 12px;border:1px solid #666;background:#222;color:#ddd;cursor:pointer;border-radius:2px;font-family:'IBM Plex Mono',monospace}
+.ab:hover{border-color:#aaa;color:#fff}
+.ab.cp{border-color:#5dd57a;color:#5dd57a}
+
+/* INPUT */
+.w-input{position:relative;z-index:5;padding:12px 16px;display:flex;gap:8px;align-items:center;background:#fff;border-top:1px solid #e0e0e0;transition:background .4s,border-color .4s}
+.widget.brag-mode .w-input{background:#161616;border-color:#333}
+.inp{flex:1;border:1.5px solid #ddd;border-radius:50px;padding:12px 18px;font-family:'IBM Plex Mono',monospace;font-size:14px;color:#333;outline:none;background:transparent;transition:border-color .3s,color .3s}
+.inp:focus{border-color:#000}
+.inp::placeholder{color:#999}
+.widget.brag-mode .inp{border-color:#444;color:#fff}
+.widget.brag-mode .inp:focus{border-color:#5dd57a}
+.widget.brag-mode .inp::placeholder{color:#777}
+.snd-btn{width:40px;height:40px;border-radius:50%;border:none;background:#2d6bf1;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .3s}
+.snd-btn:hover{background:#1f4caf}
+.widget.brag-mode .snd-btn{background:#5dd57a;color:#161616}
+.widget.brag-mode .snd-btn:hover{background:#49a860}
+/* TEXTURE TOGGLE */
+
+
+.powered{text-align:center;padding:4px;font-size:10px;color:#525252;position:relative;z-index:5;background:#fff;transition:background .4s,color .4s}
+/* TEXTURE TOGGLE */
+
+
+.widget.brag-mode .powered{color:#555;background:#161616}
+
+.wipe-bar{position:absolute;inset:0;z-index:10;background:#f56115;transform:translateX(-101%);pointer-events:none}
+.wipe-bar.go{animation:wipeAcross .4s cubic-bezier(.4,0,.2,1) both}
+@keyframes wipeAcross{0%{transform:translateX(-101%)}45%{transform:translateX(0)}55%{transform:translateX(0)}100%{transform:translateX(101%)}}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pl{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+<div class="opts">
+  <span class="lb">Page</span>
+  <button class="on" onclick="setPage('home',this)">Home</button>
+  <button onclick="setPage('events',this)">Events</button>
+  <button onclick="setPage('downtown',this)">Downtown</button>
+  <button onclick="setPage('mabels',this)">Mabel's</button>
+  <button onclick="setPage('music',this)">Music</button>
+  <div class="sep"></div>
+  <span class="lb">Transition</span>
+  <select id="transSelect" onchange="setTrans(this.value)">
+    <option value="slide">Slide</option>
+    <option value="wipe">Wipe</option>
+  </select>
+  <div class="sep"></div>
+  <span class="lb">Texture</span>
+  <select onchange="toggleTex(this.value)"><option value="off">Off</option><option value="on">Paper</option></select>
+</div>
+
+<div class="widget use-slide" id="widget">
+  <div class="wipe-bar" id="wipeBar"></div>
+  <div class="w-header">
+    <button class="minimize-btn" onclick="toggleMin()">−</button>
+    <div class="w-logo"><svg xmlns="http://www.w3.org/2000/svg" fill="#ffffff"  viewBox="0 0 48 24"> <path d="M3.953,20.053c-2.35-3.568,1.517-8.37,5.097-9.157l1.086,1.346l-0.732,2.034l1.827-0.689l0.695-1.698 l-1.681-2.06c-0.194,0.07-13.259,3.064-9.222,10.63c4.341,8.136,18.259-3.845,23.744-1.401l0.696-2.345 C18.145,15.359,8.178,26.468,3.953,20.053z"></path> <path d="M11.222,19.54c0.795,0.048,1.793-1.274,2.317-2.066c0.043,0.099,0.096,0.195,0.162,0.288 c0.837,1.191,2.364,0.897,3.995-1.999c2.139-3.518-0.511,1.964,1.83,1.114c2.116-0.768,3.06-5.589,3.06-5.589l-1.338,0.458 c-0.428,4.09-1.978,4.482-1.978,4.482s0.679-1.315,0.679-2.408c0-1.094-0.353-1.503-0.717-1.414 c-0.678,0.165-1.122,1.901-2.056,3.217c-0.274,0.386-1.934,2.327-2.164,0.852c0,0,2.825-0.991,1.904-2.959 c-0.489-1.044-3.564,1.459-3.5,3.181c0.002,0.064-0.702,1.319-1.08,1.298c-0.463-0.026,2.242-6.801,2.242-6.801l-1.612,0.515 l-2.362,6.389C10.604,18.099,10.09,19.471,11.222,19.54z M16.325,14.237c0.154,0.926-1.004,1.523-1.004,1.523 C14.756,15.764,16.222,13.619,16.325,14.237z"></path> <path d="M44.047,7.414c-0.463-0.027,2.11-6.686,2.11-6.686l-1.612,0.539L43.38,4.534l-0.005,0.002L43.216,4.9 c-1.038-0.749-2.808,0.763-3.499,2.43c-0.076,0.184-0.142,0.402-0.188,0.596c-0.289,0.869-1.035,2.039-1.275,1.947 c-0.749-0.29,1.259-3.186,0.522-3.642c-0.866-0.536-2.309,1.264-2.309,1.264l0.257-0.742l-1.099,0.353l-0.956,2.74 c-0.416,0.972-0.911,1.784-1.393,1.686c-0.749-0.152,1.13-4.036,1.13-4.036l-1.34,0.449l-0.158,0.364 c-1.038-0.749-2.808,0.763-3.499,2.43c-0.13,0.314-0.615,1.022-1.021,1.528c-0.195,0.22-0.352,0.361-0.421,0.357 c-0.463-0.026,2.114-6.541,2.114-6.541l-1.612,0.515l-1.817,5.057l-0.069,0.165c0,0-2.415,3.838-2.733,1.799 c0,0,2.825-0.991,1.904-2.959c-0.566-1.209-4.631,2.23-3.216,4.246c0.77,1.097,1.991,0.673,3.585-1.66 c-0.006,0.068-0.007,0.145-0.003,0.224c0.023,0.378,0.189,0.821,0.738,0.807c0.441-0.011,1.032-0.57,1.304-0.878 c0.37-0.388,0.709-0.852,0.957-1.221c-0.043,0.406,0.021,0.982,0.432,1.128c1.106,0.393,2.244-1.036,2.588-1.517 c0.068-0.095,0,0,0,0c0.431,1.656,1.746-0.075,2.006-0.441l-0.257,0.783l1.289-0.433c0.477-1.302,1.112-3.498,2.197-3.677 c0.675-0.111-0.806,2.147,0.124,2.694c0.852,0.501,1.782-1.091,1.968-1.309c0.06,0.224,0.18,0.416,0.393,0.492 c0.96,0.341,1.943-0.689,2.411-1.283c0.092,0.221,0.286,0.395,0.66,0.42c1.553,0.106,2.676-2.768,2.676-2.768l-0.412,0.072 C45.196,6.336,44.51,7.441,44.047,7.414z M25.163,11.379c0.154,0.927-1.004,1.523-1.004,1.523 C23.593,12.906,25.06,10.761,25.163,11.379z M32.171,10.317c-1.264,2.474-2.619,1.614-1.484-0.202 c1.008-1.613,1.961-1.063,1.961-1.063L32.171,10.317z M40.995,6.707c1.008-1.613,1.961-1.063,1.961-1.063l-0.476,1.264 C41.215,9.382,39.86,8.522,40.995,6.707z"></path> <path d="M47.119,0.667c0.351,0,0.631,0.286,0.631,0.636c0,0.356-0.28,0.639-0.634,0.639 c-0.351,0-0.636-0.283-0.636-0.639c0-0.351,0.286-0.636,0.636-0.636H47.119z M47.114,0.794c-0.266,0-0.481,0.229-0.481,0.512 c0,0.286,0.215,0.509,0.484,0.509c0.269,0.003,0.486-0.223,0.486-0.509c0-0.283-0.218-0.512-0.486-0.512H47.114z M47.006,1.674 h-0.15V0.967c0.057-0.009,0.119-0.02,0.226-0.02c0.122,0,0.195,0.02,0.243,0.057c0.04,0.031,0.062,0.079,0.062,0.153 c0,0.085-0.059,0.144-0.136,0.164v0.006c0.062,0.011,0.102,0.068,0.113,0.173c0.014,0.11,0.028,0.153,0.04,0.175h-0.156 c-0.017-0.025-0.028-0.088-0.042-0.184c-0.011-0.076-0.057-0.107-0.133-0.107h-0.068V1.674z M47.006,1.267h0.071 c0.088,0,0.156-0.028,0.156-0.102c0-0.059-0.042-0.105-0.144-0.105c-0.037,0-0.062,0-0.082,0.003V1.267z"></path> </svg></div>
+  </div>
+  <div class="mode-bar"><button class="mode-btn to-brag" id="modeBtn" onclick="switchMode(mode==='travel'?'brag':'travel')">Chat with Brag Coach</button></div>
+  <div class="panels">
+    <div class="panel travel" id="panelTravel">
+      <div class="t-agent-stage"><div class="t-agent"><span class="t-agent-q">DC</span><div class="t-agent-label">Travel Agent</div></div></div>
+      <div class="t-intro">Hi there! You know those places only the locals know? Let our Destination Cleveland virtual assistant or a live CLE Concierge help you find them with suggestions on things to do, events to attend, restaurants, maps, and other tips.</div>
+              <div class="t-prompts">
+        <button class="t-pr" onclick="travelTap('Things to Do')">Things to Do</button>
+        <button class="t-pr" onclick="travelTap('Events')">Events</button>
+        <button class="t-pr" onclick="travelTap('2026 Brewery Passport')">2026 Brewery Passport</button>
+        <button class="t-pr" onclick="travelTap('Trip Planner')">Trip Planner</button>
+        <button class="t-pr" onclick="travelTap('Download Our App')">Download Our App</button>
+        <button class="t-pr" onclick="travelTap('Chat With Live CLE Concierge')">Chat With Live CLE Concierge</button>
+      </div>
+      <div class="msgs hidden" id="travelMsgs"></div>
+      </div>
+    </div>
+    <div class="panel brag" id="panelBrag">
+      <div class="b-stage">
+          <span class="b-word b-w1">Unapologetic</span>
+          <span class="b-word b-w2">Bold</span>
+          <span class="b-word b-w3">Clever</span>
+          <span class="b-word b-w4">Proud</span>
+          <span class="b-word b-w5">Passionate</span>
+          <div class="b-coach" id="bragCoach"><div class="b-coach-q">?</div><div class="b-coach-label">Coach</div></div>
+      </div>
+      <div class="b-text">
+          <div class="b-ready">READY. SET.</div>
+          <div class="b-name">BRAG</div>
+          <div class="b-sub">Your Cleveland trash talk machine</div>
+      </div>
+            <div class="b-prompts" id="bragPrompts"></div>
+      <div class="back-strip" id="backStrip"><a onclick="switchMode('travel')">← Switch to Travel Agent</a></div>
+      <div class="msgs hidden" id="bragMsgs"></div>
+      </div>
+    </div>
+  </div>
+  <div class="w-input">
+    <input class="inp" id="inp" placeholder="How can I help you?" onkeydown="if(event.key==='Enter')send()">
+    <button class="snd-btn" onclick="send()">↑</button>
+  </div>
+  <div class="powered">Powered By Satisfi Labs</div>
+</div>
+
+<script>
+let mode='travel',curPage='home',transType='slide';
+
+const PAGES={
+  home:{prompts:["Hype me up about Cleveland","Give me a comeback for haters","Write me an Instagram caption","Craft a DM inviting my friend to visit Cleveland"]},
+  events:{prompts:["Write a caption for tonight's event","Roast someone who says CLE has nothing going on","Hype up the Guardians home opener","Tell me something fun this weekend"]},
+  downtown:{prompts:["Caption for my E. 4th Street pic","Comeback for \"downtown is dead\"","Best brag about Playhouse Square","Where should I eat downtown?"]},
+  mabels:{prompts:["Instagram caption for this brisket","Why is Cleveland BBQ better than Texas?","DM to send my friend about this place","What else should I try downtown?"]},
+  music:{prompts:["Caption for my Rock Hall visit","Roast someone who says CLE has no music scene","Brag about the Cleveland Orchestra","TikTok idea for a concert tonight"]}
+};
+
+const BRAG_R={
+"Hype me up about Cleveland":"Cleveland\u2019s food scene is built like the city itself: tough, creative, and allergic to being boring.\n\nStart Downtown where chefs are putting new-school twists on old-school comfort, then go chase the classics like corned beef and the legendary Polish Boy.\n\nGot a sweet tooth? Go hunt down locally made ice cream, Hong Kong street waffles, or beer-infused donuts at Brewnuts.",
+"Write me an Instagram caption":"Golden hour over The Land and the skyline\u2019s doing what it does: showing off like it earned it, because it did.\n\nCleveland doesn\u2019t pose. Cleveland puts in work, then lets the sunset handle the flex.\n\n#ThisIsCleveland #TheLand #ClevelandRocks",
+"Give me a comeback for haters":"Say it with your chest. Cleveland doesn\u2019t need hype. Cleveland produces receipts.\n\n\"Talk all you want. Cleveland keeps building while you\u2019re still tweeting.\"\n\"Cleveland\u2019s an underdog city. We don\u2019t whine, we win.\"\n\"You ever actually been, or you just recycling jokes from 2009?\"\n\"If Cleveland\u2019s so bad, why do people never shut up about it?\"",
+"Craft a DM inviting my friend to visit Cleveland":"Here\u2019s a DM you can copy paste:\n\nYo. Stop acting like Cleveland is optional. Pull up for a weekend and I\u2019ll prove it. We\u2019re talking lakefront views, real neighborhoods, food that hits and the kind of underdog energy that makes everything feel earned.",
+"Instagram caption for this brisket":"\"Michael Symon put Bertman\u2019s ballpark mustard in the BBQ sauce and called it Cleveland-style. This is what happens when a city refuses to play by the rules.\"\n\n#MabelsBBQ #ClevelandBBQ #MichaelSymon",
+"Caption for my Rock Hall visit":"\"History on the walls, future in the speakers. Rock Hall, Cleveland.\"\n\nPunchier: \"Making a legendary moment at the Rock & Roll Hall of Fame.\"\n\n#RockOn #ClevelandRocks #RockHall"
+};
+
+const LD=["Cooking up something good...","Sharpening the trash talk...","Consulting the Guardians...","Checking with the bridge..."];
+const DW=["weather","crime","lebron","politics","directions","population"];
+const DF="That\u2019s outside my lane. I\u2019m your Cleveland brag coach: trash talk, captions, and comebacks.";
+const AV_B='<div class="m-av b"><span class="av-q">?</span></div>';
+
+function setPage(p,btn){
+  curPage=p;
+  document.querySelectorAll('.opts button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderBragPrompts();
+
+function toggleMin(){
+  const w=document.getElementById("widget");
+  w.classList.toggle("minimized");
+}
+
+function toggleTex(v){
+  document.getElementById("widget").classList.toggle("paper-bg",v==="on");
+}
+
+function updateModeBtn(){
+  const btn=document.getElementById("modeBtn");
+  if(mode==="travel"){
+    btn.className="mode-btn to-brag";
+    btn.textContent="Chat with Brag Coach";
+  } else {
+    btn.className="mode-btn to-travel";
+    btn.textContent="← Back to Travel Agent";
+  }
+}
+
+function toggleTexture(v){
+  document.getElementById("widget").classList.toggle("paper-bg",v==="on");
+}
+
+
+  if(mode==='brag'){switchMode('travel')}
+}
+
+function renderBragPrompts(){
+  const el=document.getElementById('bragPrompts');
+  const prompts=PAGES[curPage].prompts;
+  el.innerHTML=prompts.map(p=>'<button class="b-pr" onclick="bragTap(this.textContent)">'+p+'</button>').join('');
+}
+
+function setTrans(t){transType=t;const w=document.getElementById('widget');w.classList.remove('use-slide','use-wipe');w.classList.add('use-'+t)}
+
+function switchMode(m){
+  const w=document.getElementById('widget');
+  mode=m;
+  document.getElementById('bragMsgs').classList.add('hidden');
+  document.getElementById('bragMsgs').innerHTML='';
+  document.getElementById('travelMsgs').classList.add('hidden');
+  document.getElementById('travelMsgs').innerHTML='';
+  document.getElementById('backStrip').classList.remove('show');
+  if(transType==='wipe'){
+    const bar=document.getElementById('wipeBar');
+    bar.classList.remove('go');void bar.offsetWidth;bar.classList.add('go');
+    setTimeout(()=>{m==='brag'?w.classList.add('brag-mode'):w.classList.remove('brag-mode');if(m==='brag')popCoach();updateInp()},180);
+    bar.addEventListener('animationend',()=>bar.classList.remove('go'),{once:true});
+  } else {
+    m==='brag'?w.classList.add('brag-mode'):w.classList.remove('brag-mode');
+    if(m==='brag')setTimeout(popCoach,350);
+    updateInp();
+    updateModeBtn();
+  }
+}
+function popCoach(){const c=document.getElementById('bragCoach');c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop')}
+function updateInp(){document.getElementById('inp').placeholder=mode==='brag'?"Talk trash, ask for a caption...":"How can I help you?"}
+function scrollP(id){document.getElementById(id==='brag'?'panelBrag':'panelTravel').scrollTop=99999}
+
+function travelTap(t){
+  const m=document.getElementById('travelMsgs');m.classList.remove('hidden');
+  m.innerHTML+='<div class="m usr-t" style="align-self:flex-end">'+t+'</div>';scrollP('travel');
+  setTimeout(()=>{m.innerHTML+='<div class="m-row"><div class="m-av t">DC</div><div class="m bot-t">[Travel assistant response would appear here.]</div></div>';scrollP('travel')},800);
+}
+
+function bragTap(t){
+  const m=document.getElementById('bragMsgs');m.classList.remove('hidden');
+  document.getElementById('backStrip').classList.add('show');
+    m.querySelectorAll('.b-prompts').forEach(el=>el.remove());
+  m.innerHTML+='<div class="m usr-b" style="align-self:flex-end">'+t+'</div>';scrollP('brag');
+  if(DW.some(w=>t.toLowerCase().includes(w))){
+    setTimeout(()=>{m.innerHTML+='<div class="m-row">'+AV_B+'<div class="m bot-b df">'+DF+'<div style="margin-top:8px"><a onclick="switchMode(\u0027travel\u0027)" style="font-size:12px;color:#5dd57a;cursor:pointer;text-decoration:underline">Try Travel Agent</a></div></div></div>';showFU(t);scrollP('brag')},600);return;
+  }
+  if(t.toLowerCase()==='error'){setTimeout(()=>{m.innerHTML+='<div class="m-row">'+AV_B+'<div class="m bot-b err">Hold on, even hype men need a second sometimes. Try again?</div></div>';scrollP('brag')},800);return}
+  const lt=LD[Math.floor(Math.random()*LD.length)],lid='l'+Date.now();
+  m.innerHTML+='<div class="m-row" id="'+lid+'">'+AV_B+'<div class="m bot-b ld" style="animation:pl 1.2s ease-in-out infinite">'+lt+'</div></div>';scrollP('brag');
+  setTimeout(()=>{
+    const el=document.getElementById(lid);if(!el)return;
+    const r=BRAG_R[t]||"Cleveland\u2019s got more going on than your city has excuses. Ask me something specific.";
+    const tl=t.toLowerCase(),fmt=detectFmt(tl,r);let inner;
+    if(fmt==='comeback'){
+      const lines=r.split('\n');let intro='',items=[];
+      lines.forEach(l=>{const s=l.trim();if(s.startsWith('"')&&s.endsWith('"'))items.push(s.slice(1,-1));else if(s.length>0)intro+=s+' '});
+      let h='<div class="m bot-b">'+intro.trim()+'<div class="cb-list">';
+      items.forEach(i=>{h+='<div class="cb-item"><div class="cb-text">\u201c'+i+'\u201d</div><button class="cb-cp" onclick="cpI(this,`'+i.replace(/`/g,'\\`')+'`)">Copy</button></div>'});
+      h+='</div>'+acts()+'</div>';inner=h;
+    } else if(fmt==='caption'){
+      const pts=r.split(/\n\n(?=#)/);
+      inner='<div class="m bot-b cap">'+pts[0]+(pts[1]?'<div class="tags">'+pts[1]+'</div>':'')+acts()+'</div>';
+    } else if(fmt==='dm'){
+      const dmText=r.replace(/^.*copy paste.*?:\n\n/i,'');
+      inner='<div class="m bot-b"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#999;margin-bottom:6px;font-family:IBM Plex Mono,monospace">\u2709 Ready to paste</div>'+dmText+acts()+'</div>';
+    } else {inner='<div class="m bot-b">'+r+acts()+'</div>'}
+    el.outerHTML='<div class="m-row">'+AV_B+inner+'</div>';showFU(t);scrollP('brag');
+  },1400);
+}
+function detectFmt(tl,r){
+  if(tl.includes('dm')||tl.includes('inviting'))return 'dm';
+  if(tl.includes('tiktok'))return 'tiktok';
+  if((tl.includes('comeback')||tl.includes('roast')||tl.includes('hater'))&&r.includes('"'))return 'comeback';
+  if((tl.includes('caption')||tl.includes('instagram'))&&r.includes('#'))return 'caption';
+  return 'default';
+}
+function showFU(orig){
+  const m=document.getElementById('bragMsgs'),prompts=PAGES[curPage].prompts;
+  const fu=prompts.filter(p=>p!==orig).slice(0,2);if(!fu.length)return;
+  let h='<div class="b-prompts" style="padding:4px 0">';
+  fu.forEach(p=>{h+='<button class="b-pr" onclick="bragTap(this.textContent)">'+p+'</button>'});
+  h+='</div>';m.innerHTML+=h;scrollP('brag');
+}
+function acts(){return '<div class="acts"><button class="ab" onclick="smartS(this)">\ud83d\udccb Copy</button></div>'}
+function smartS(btn){const t=btn.closest('.m').childNodes[0]?btn.closest('.m').childNodes[0].textContent:'';navigator.clipboard.writeText(t).then(()=>{btn.classList.add('cp');btn.textContent='\u2713 Copied!';setTimeout(()=>{btn.classList.remove('cp');btn.textContent='\ud83d\udccb Copy'},2000)})}
+function cpI(btn,text){navigator.clipboard.writeText(text).then(()=>{btn.classList.add('done');btn.textContent='\u2713';setTimeout(()=>{btn.classList.remove('done');btn.textContent='Copy'},2000)})}
+function send(){const i=document.getElementById('inp'),t=i.value.trim();if(!t)return;i.value='';if(mode==='brag')bragTap(t);else travelTap(t)}
+renderBragPrompts();
+    btn.className="mode-btn to-travel";
+    btn.textContent="← Back to Travel Agent";
+  }
+}
+
+function toggleTexture(v){
+  document.getElementById("widget").classList.toggle("paper-bg",v==="on");
+}
+
+
+</script>
+</body>
+</html>
