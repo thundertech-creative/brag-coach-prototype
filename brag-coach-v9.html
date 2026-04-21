@@ -244,7 +244,7 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
 <div class="mascot-picker" id="mascotPicker">
   <button class="active" onclick="setMascot('none',this)" title="Default"><span class="mp-none">?</span></button>
   <button onclick="setMascot('doga',this)" title="Dog A"><img src="mascot-doga.png" alt="Dog A"></button>
-  <button onclick="setMascot('dogb',this)" title="Dog B"><img src="mascot-dogb.png" alt="Dog B"></button>
+  <button class="active" onclick="setMascot('dogb',this)" title="Dog B"><img src="mascot-dogb.png" alt="Dog B"></button>
   <button onclick="setMascot('guardian',this)" title="Guardian"><img src="mascot-guardian.png" alt="Guardian"></button>
   <button onclick="setMascot('mega',this)" title="Megaphone"><img src="mascot-megaphone.png" alt="Megaphone"></button>
 </div>
@@ -266,7 +266,7 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
   <div class="panels">
     <!-- TRAVEL -->
     <div class="panel travel" id="pTravel">
-      <div class="t-avatar"><div class="t-av-circle"><span class="t-av-txt">DC</span><span class="t-av-lbl">Travel Agent</span></div></div>
+      <div class="t-avatar"><img src="travel-agent.png" alt="Travel Agent" style="height:100px;width:100px;object-fit:contain;border-radius:50%"></div>
       <div class="t-intro">Hi there! You know those places only the locals know? Let our Destination Cleveland virtual assistant or a live CLE Concierge help you find them with suggestions on things to do, events to attend, restaurants, maps, and other tips.</div>
       <div class="t-prompts">
         <button class="t-pr" onclick="travelTap(this.textContent)">Things to Do</button>
@@ -504,6 +504,7 @@ function send(){var i=document.getElementById('inp'),t=i.value.trim();if(!t)retu
 
 // Init
 renderPrompts();
+setMascot('dogb', document.querySelectorAll('.mascot-picker button')[2]);
 </script>
 </body>
 </html>
