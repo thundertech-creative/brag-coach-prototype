@@ -7,25 +7,47 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding-top:58px}
+body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-direction:row;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 
-/* ============ OPTIONS BAR ============ */
-.opts{
-  position:fixed;top:0;left:0;right:0;z-index:9999;
-  background:#0a0a0a;border-bottom:1px solid #222;
-  display:flex;align-items:center;padding:0 20px;height:54px;gap:10px;overflow-x:auto;
+/* ============ RIGHT SIDEBAR ============ */
+.sidebar{
+  position:fixed;top:0;right:0;bottom:0;z-index:9999;
+  display:flex;flex-direction:row;align-items:stretch;
 }
-.opts .lb{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#555;white-space:nowrap}
-.opts select,.opts button{font-family:'IBM Plex Mono',monospace;font-size:13px;background:#1a1a1a;color:#aaa;border:1px solid #333;padding:8px 16px;border-radius:2px;cursor:pointer;white-space:nowrap}
-.opts button.on{background:#f56115;border-color:#f56115;color:#fff}
-.opts .sep{width:1px;height:24px;background:#333;margin:0 4px;flex-shrink:0}
+.sidebar-tab{
+  align-self:center;
+  background:#0a0a0a;border:1px solid #333;border-right:none;
+  border-radius:6px 0 0 6px;
+  padding:10px 6px;cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  color:#666;letter-spacing:1.5px;text-transform:uppercase;
+  writing-mode:vertical-rl;text-orientation:mixed;
+  transform:rotate(180deg);
+  transition:color .2s;
+}
+.sidebar-tab:hover{color:#fff}
+.sidebar-panel{
+  width:200px;background:#0a0a0a;border-left:1px solid #222;
+  display:flex;flex-direction:column;gap:16px;padding:20px 16px;
+  overflow-y:auto;
+  transform:translateX(100%);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+.sidebar.open .sidebar-panel{transform:translateX(0)}
+.sidebar.open .sidebar-tab{color:#aaa}
+.sb-section{display:flex;flex-direction:column;gap:6px}
+.sb-label{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#555}
+.sb-btn{font-family:'IBM Plex Mono',monospace;font-size:12px;background:#1a1a1a;color:#aaa;border:1px solid #333;padding:7px 12px;border-radius:2px;cursor:pointer;text-align:left}
+.sb-btn:hover{color:#fff;border-color:#555}
+.sb-btn.on{background:#f56115;border-color:#f56115;color:#fff}
+.sb-select{font-family:'IBM Plex Mono',monospace;font-size:12px;background:#1a1a1a;color:#aaa;border:1px solid #333;padding:7px 12px;border-radius:2px;cursor:pointer;width:100%}
 
 /* ============ WIDGET ============ */
 .widget{
-  width:607px;max-width:95vw;height:calc(92vh - 58px);max-height:806px;
+  width:607px;max-width:95vw;height:92vh;max-height:806px;
   border-radius:20px;overflow:hidden;position:relative;
   display:flex;flex-direction:column;
-  box-shadow:#bbb 0 0 10px;margin-top:10px;
+  box-shadow:#bbb 0 0 10px;
 }
 /* FLOATING MASCOT PICKER */
 .widget-wrap{position:relative;display:inline-block}
@@ -220,25 +242,35 @@ body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-dir
 </head>
 <body>
 
-<!-- OPTIONS BAR -->
-<div class="opts">
-  <span class="lb">Page</span>
-  <button class="on" onclick="setPage('home',this)">Home</button>
-  <button onclick="setPage('events',this)">Events</button>
-  <button onclick="setPage('downtown',this)">Downtown</button>
-  <button onclick="setPage('mabels',this)">Mabel's</button>
-  <button onclick="setPage('music',this)">Music</button>
-  <div class="sep"></div>
-  <span class="lb">View</span>
-  <select onchange="setView(this.value)"><option value="desktop">Desktop</option><option value="mobile">Mobile</option></select>
-  <div class="sep"></div>
-  <span class="lb">Dark Tex</span>
-  <select onchange="setDarkTex(this.value)">
-    <option value="a" selected>Guardian</option>
-    <option value="off">None</option>
-    <option value="b">Texture</option>
-    <option value="c">Warm</option>
-  </select>
+<!-- RIGHT SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-tab" onclick="document.getElementById('sidebar').classList.toggle('open')">Proto Options</div>
+  <div class="sidebar-panel">
+    <div class="sb-section">
+      <div class="sb-label">Page</div>
+      <button class="sb-btn on" onclick="setPage('home',this)">Home</button>
+      <button class="sb-btn" onclick="setPage('events',this)">Events</button>
+      <button class="sb-btn" onclick="setPage('downtown',this)">Downtown</button>
+      <button class="sb-btn" onclick="setPage('mabels',this)">Mabel's</button>
+      <button class="sb-btn" onclick="setPage('music',this)">Music</button>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">View</div>
+      <select class="sb-select" onchange="setView(this.value)">
+        <option value="desktop">Desktop</option>
+        <option value="mobile">Mobile</option>
+      </select>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">Dark Tex</div>
+      <select class="sb-select" onchange="setDarkTex(this.value)">
+        <option value="a" selected>Guardian</option>
+        <option value="off">None</option>
+        <option value="b">Texture</option>
+        <option value="c">Warm</option>
+      </select>
+    </div>
+  </div>
 </div>
 
 <!-- WIDGET -->
@@ -337,7 +369,7 @@ const AV='<div class="m-av brag-av">?</div>';
 // === OPTIONS ===
 function setPage(p,btn){
   page=p;
-  document.querySelectorAll('.opts button').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.sb-btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   renderPrompts();
   if(mode==='brag') doSwitch();
