@@ -3,1074 +3,507 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brag Coach Prototype</title>
+<title>Brag Coach v8</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Source+Sans+3:wght@300;400;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --orange:#f66116;--green:#5ed47b;--blue:#2d6bf1;--red:#eb3b26;
-  --drop-bg:#f4f4f4;
-}
-body{font-family:'IBM Plex Mono',monospace;background:#111;overflow:hidden;height:100vh}
+body{font-family:'Noto Sans',sans-serif;background:#e8e8e8;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding-top:58px}
 
-/* SWITCHER */
-.sw{position:fixed;top:0;left:0;right:0;z-index:9999;background:#0a0a0a;border-bottom:1px solid #222;display:flex;align-items:center;padding:0 16px;height:36px;gap:4px}
-.sw .lb{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#444;margin-right:10px}
-.sw button{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:4px 12px;border:1px solid #333;background:transparent;color:#777;cursor:pointer;transition:all .15s}
-.sw button:hover{color:#ccc;border-color:#555}
-.sw button.on{background:var(--orange);border-color:var(--orange);color:#fff}
-
-/* MAIN */
-.main{margin-top:36px;height:calc(100vh - 36px);position:relative;overflow:hidden}
-
-/* PAGE BG */
-.pg-bg{position:absolute;top:0;left:0;right:0;bottom:0;z-index:1;overflow-y:auto;transition:opacity .4s;background:#111}
-.pg-bg img{width:100%;display:block}
-.pg-bg.hidden{opacity:0;pointer-events:none}
-
-/* === TOP BAR: pill + site icons === */
-.top-bar{
-  position:absolute;top:8px;left:0;right:0;z-index:100;
-  padding:6px 20px;
-  display:flex;align-items:center;justify-content:flex-end;
-  gap:0;
+/* ============ OPTIONS BAR ============ */
+.opts{
+  position:fixed;top:0;left:0;right:0;z-index:9999;
+  background:#0a0a0a;border-bottom:1px solid #222;
+  display:flex;align-items:center;padding:0 20px;height:54px;gap:10px;overflow-x:auto;
 }
+.opts .lb{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#555;white-space:nowrap}
+.opts select,.opts button{font-family:'IBM Plex Mono',monospace;font-size:13px;background:#1a1a1a;color:#aaa;border:1px solid #333;padding:8px 16px;border-radius:2px;cursor:pointer;white-space:nowrap}
+.opts button.on{background:#f56115;border-color:#f56115;color:#fff}
+.opts .sep{width:1px;height:24px;background:#333;margin:0 4px;flex-shrink:0}
 
-/* MERGE WRAPPER (pill + search icon fuse on open) */
-.merge-wrap{
-  display:flex;align-items:center;
-  border-radius:50px;
-  position:relative;
-  transition:border-radius .3s, background .3s, border-color .3s, box-shadow .3s, width .35s cubic-bezier(.4,0,.2,1);
-  border:1.5px solid transparent;
-  margin-right:4px;
-}
-.merge-wrap.open{
-  border-color:var(--green);
-  background:#111;
-  border-radius:14px 14px 0 0;
-  box-shadow:0 4px 20px rgba(0,0,0,.3);
-}
-/* When merged, the search icon is visually inside */
-.merge-wrap.open .site-icon#searchIcon{
-  background:transparent;
-  border-left:1px solid #2a2a2a;
-  border-radius:0 13px 0 0;
-  margin:0;
-  padding:8px 14px;
-}
-.merge-wrap.open .site-icon#searchIcon svg circle,
-.merge-wrap.open .site-icon#searchIcon svg line{stroke:var(--green)}
-.merge-wrap.open .site-icon#searchIcon .si-lbl{color:var(--green)}
-
-/* SEARCH PILL (left of icons) */
-.search-pill{
-  border:1.5px solid rgba(255,255,255,.3);border-radius:50px;
-  padding:15px 26px;
-  font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.05em;text-transform:uppercase;
-  color:rgba(255,255,255,.65);background:rgba(0,0,0,.35);backdrop-filter:blur(8px);
-  cursor:pointer;position:relative;
-  transition:background .3s, border-color .3s, color .3s, border-radius .3s, box-shadow .3s, padding .3s;
-  flex:1 1 auto;
-  min-width:0;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.search-pill:hover{border-color:rgba(255,255,255,.5)}
-.search-pill.open{
-  border-color:transparent;background:transparent;color:#ccc;
-  border-radius:14px 0 0 0;
-  box-shadow:none;
-  backdrop-filter:none;
-}
-.search-pill .ico{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:16px;opacity:.5;display:none}
-
-/* Pill text cycling */
-#pillTxt{transition:opacity .3s}
-
-/* BRAG label inside pill */
-.brag-label{
-  position:absolute;right:14px;top:50%;transform:translateY(-50%);
-  background:var(--green);color:#111;
-  font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.1em;
-  padding:5px 10px;border-radius:2px;cursor:pointer;
-  opacity:0;transition:opacity .3s;pointer-events:none;
-}
-.brag-label.show{opacity:1;pointer-events:all}
-.brag-label:hover{background:#49a860}
-
-/* === SITE ICON NAV === */
-.site-icon{
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-  padding:6px 14px;
-  cursor:pointer;background:none;border:none;
-  transition:opacity .15s;
-}
-.site-icon:hover{opacity:.7}
-.site-icon svg{width:26px;height:26px}
-.site-icon .si-lbl{
-  font-family:'Source Sans 3',sans-serif;
-  font-size:10px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.1em;
-  color:rgba(255,255,255,.8);
-  white-space:nowrap;
-}
-/* Active search icon */
-.site-icon{position:relative}
-.si-dot{
-  position:absolute;top:2px;right:8px;width:7px;height:7px;
-  border-radius:50%;background:var(--green);
-  display:none;z-index:1;
-  animation:pdot 2s ease-in-out infinite;
-}
-.si-dot.show{display:block}
-@keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
-.site-icon.active svg circle,
-.site-icon.active svg line{stroke:var(--green)}
-.site-icon.active .si-lbl{color:var(--green)}
-
-/* JIGGLE */
-@keyframes jiggle{
-  0%{transform:rotate(0)}15%{transform:rotate(-1.5deg)}30%{transform:rotate(1.5deg)}
-  45%{transform:rotate(-1deg)}60%{transform:rotate(1deg)}75%{transform:rotate(-.5deg)}100%{transform:rotate(0)}
-}
-.search-pill.jiggle{animation:jiggle .5s ease}
-
-/* CHARACTER PEEK */
-.char-peek{
-  position:absolute;right:60px;bottom:-2px;width:36px;height:28px;
-  overflow:hidden;cursor:pointer;z-index:101;display:none;
-}
-.char-peek.visible{display:block;animation:peekIn .3s ease both}
-.char-peek:hover{transform:translateY(-4px)}
-.char-peek svg{width:36px;height:36px;position:absolute;top:0;left:0}
-@keyframes peekIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-.char-peek.visible.bob{animation:bob 2s ease-in-out infinite}
-
-/* OVERLAY */
-.ov{position:absolute;top:0;left:0;right:0;bottom:0;z-index:90;background:rgba(0,0,0,0);pointer-events:none;transition:background .4s}
-.ov.on{background:rgba(0,0,0,.55);pointer-events:all}
-
-/* CHAT DROPDOWN */
-.drop{
-  position:absolute;z-index:200;
-  background:#111;border:1.5px solid var(--green);border-top:none;
-  border-radius:0 0 14px 14px;
-  height:calc(100vh - 140px);
-  transform:scaleY(0);transform-origin:top;
-  opacity:0;pointer-events:none;
-  transition:transform .35s cubic-bezier(.4,0,.2,1),opacity .25s;
+/* ============ WIDGET ============ */
+.widget{
+  width:607px;max-width:95vw;height:calc(92vh - 58px);max-height:806px;
+  border-radius:20px;overflow:hidden;position:relative;
   display:flex;flex-direction:column;
-  box-shadow:0 16px 48px rgba(0,0,0,.5);
+  box-shadow:#bbb 0 0 10px;margin-top:10px;
 }
-.drop.open{transform:scaleY(1);opacity:1;pointer-events:all}
+/* FLOATING MASCOT PICKER */
+.widget-wrap{position:relative;display:inline-block}
+.mascot-picker{position:absolute;left:-52px;top:50%;transform:translateY(-50%);z-index:6;display:flex;flex-direction:column;gap:6px}
+.mascot-picker button{width:42px;height:42px;border-radius:50%;border:2px solid #333;background:#111;cursor:pointer;padding:0;overflow:hidden;opacity:0.6;transition:opacity .2s,border-color .2s}
+.mascot-picker button:hover{opacity:1;border-color:#666}
+.mascot-picker button.active{opacity:1;border-color:#f56115}
+.mascot-picker button img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.mascot-picker .mp-none{font-family:"IBM Plex Mono",monospace;font-size:16px;color:#f56115;display:flex;align-items:center;justify-content:center}
+/* MOBILE VIEW */
+.widget.mobile-view{width:375px;height:calc(100vh - 58px);max-height:none;border-radius:0}
+.widget.minimized .mode-bar,.widget.minimized .panels,.widget.minimized .w-input,.widget.minimized .powered{display:none}
+.widget.minimized{height:auto;min-height:0;max-height:none}
 
-.ch-topbar{padding:6px 14px;display:flex;justify-content:flex-end;flex-shrink:0}
-.ch-x{background:none;border:none;color:#888;font-size:24px;cursor:pointer;padding:2px 8px}
-.ch-x:hover{color:#fff}
-
-/* Welcome state */
-.welcome{text-align:center;padding:28px 20px 16px;flex-shrink:0;animation:fu .4s ease both;position:relative;overflow:hidden}
-.welcome .w-script{font-family:'IBM Plex Mono',monospace;font-size:22px;font-style:italic;color:#fff;margin-bottom:2px;letter-spacing:.02em}
-.welcome .w-ready{font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.2em;color:#ccc;margin-bottom:2px}
-.welcome .w-name{font-family:'IBM Plex Mono',monospace;font-size:52px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#fff;line-height:1}
-.welcome .w-weare{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:#ccc;margin-top:16px;margin-bottom:8px}
-.welcome .w-traits{display:flex;flex-direction:column;align-items:center;gap:2px}
-.welcome .w-trait{font-family:'IBM Plex Mono',monospace;font-size:13px;text-transform:uppercase;letter-spacing:.15em;color:#fff;padding:2px 0}
-.welcome .w-bottom{font-family:'IBM Plex Mono',monospace;font-size:8px;text-transform:uppercase;letter-spacing:.25em;color:#555;margin-top:16px}
-.welcome .w-char{position:absolute;top:20px;right:16px;width:60px;height:60px}
-.welcome .w-char svg{width:100%;height:100%}
-.welcome.collapsed{display:none}
-
-.ch-mini{padding:8px 14px;border-bottom:1px solid #222;display:none;align-items:center;gap:8px;flex-shrink:0}
-.ch-mini.show{display:flex}
-.ch-mini .mini-av{width:34px;height:34px;flex-shrink:0}
-.ch-mini .mini-nm{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#fff}
-.ch-mini .mini-st{font-size:11px;color:var(--green)}
-
-.m-row{display:flex;gap:10px;align-items:flex-start;animation:fu .3s ease both}
-.m-row .m-av{width:42px;height:42px;flex-shrink:0;margin-top:2px}
-.m-row .m-av svg{width:100%;height:100%}
-
-.msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px;min-height:0}
-.msgs::-webkit-scrollbar{width:3px}
-.msgs::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
-
-.ctx{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#555;padding-bottom:4px}
-.ctx b{color:var(--orange);font-weight:400}
-
-.prs{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0}
-.pr{
-  font-family:'IBM Plex Mono',monospace;font-size:13px;padding:10px 16px;border-radius:2px;
-  background:#1a1a1a;cursor:pointer;transition:all .15s;text-align:left;line-height:1.3;
-  animation:fu .3s ease both;
+/* ============ HEADER ============ */
+.w-header{
+  position:relative;z-index:5;padding:16px 20px;
+  display:flex;align-items:center;justify-content:center;
+  background:#000;min-height:60px;flex-shrink:0;
 }
-.pr.o{border:1.5px solid var(--orange);color:var(--orange)}.pr.o:hover{background:rgba(246,97,22,.12)}
-.pr.g{border:1.5px solid var(--green);color:var(--green)}.pr.g:hover{background:rgba(94,212,123,.12)}
-.pr.b{border:1.5px solid var(--blue);color:var(--blue)}.pr.b:hover{background:rgba(45,107,241,.12)}
-.pr.r{border:1.5px solid var(--red);color:var(--red)}.pr.r:hover{background:rgba(235,59,38,.12)}
-.pr.n{border:1.5px solid #666;color:#ccc}.pr.n:hover{background:#222}
-.pr:nth-child(1){animation-delay:.05s}.pr:nth-child(2){animation-delay:.1s}
-.pr:nth-child(3){animation-delay:.15s}.pr:nth-child(4){animation-delay:.2s}
+.w-logo{height:30px;display:flex;align-items:center}
+.w-logo svg{height:100%;width:auto}
+.min-btn{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:#666;font-size:20px;cursor:pointer;
+}
+.min-btn:hover{color:#fff}
 
-.m{max-width:82%;padding:12px 16px;border-radius:2px;font-size:14px;line-height:1.55;white-space:pre-wrap;animation:fu .3s ease both;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-.m.bot{background:#1a1a1a;color:#fff;align-self:flex-start;box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.m.usr{background:#333;color:#fff;align-self:flex-end}
-.m.cap{border-left:3px solid var(--orange);background:#1a1510}
-.m .tags{color:var(--blue);font-size:11px;margin-top:5px}
-.m.ld{color:var(--orange);font-style:italic;animation:fu .3s ease both,pl 1.2s ease-in-out infinite}
-.m.df{border-left:3px solid var(--green);background:#0a1a0e}
-.m.er{border-left:3px solid var(--red);background:#1a0a0a}
+/* ============ MODE BAR (fixed between header and panels) ============ */
+.mode-bar{
+  position:relative;z-index:4;padding:10px 20px;flex-shrink:0;
+  transition:background .4s;height:58px;display:flex;align-items:center;
+}
+.widget:not(.brag-mode) .mode-bar{background:#F5F5F5}
+.widget.brag-mode .mode-bar{background:#161616}
+.mode-btn{
+  display:block;width:100%;padding:14px;text-align:center;height:38px;line-height:10px;
+  border-radius:50px;font-family:'Noto Sans',sans-serif;font-size:15px;font-weight:600;
+  cursor:pointer;border:none;transition:background .2s,color .2s,border-color .2s;
+}
+.mode-btn.to-brag{background:#c4792b;color:#fff}
+.mode-btn.to-brag:hover{background:#a8621e}
+.mode-btn.to-travel{background:transparent;border:1.5px solid #666;color:#ddd}
+.mode-btn.to-travel:hover{border-color:#fff;color:#fff}
 
-.m.dm{background:#2a2a2a;border-radius:2px;padding:14px 18px;color:#fff;max-width:75%}
-.m.dm .dm-label{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#666;margin-bottom:6px}
-.m.dm .dm-body{font-size:15px;line-height:1.5}
+/* ============ PANELS ============ */
+.panels{position:relative;flex:1;overflow:hidden;z-index:1;min-height:0}
+.panel{position:absolute;inset:0;overflow-y:auto;display:flex;flex-direction:column;padding-right:4px}
+.panel::-webkit-scrollbar{width:4px}
+.panel::-webkit-scrollbar-thumb{border-radius:2px}
+.panel.travel{background:#F5F5F5;z-index:2}
+.panel.travel::-webkit-scrollbar-thumb{background:#C1C1C1}
+.panel.brag{background:#161616;z-index:1}
+.panel.brag::-webkit-scrollbar-thumb{background:#555}
 
-.m.tik{background:#111;color:#f0f0f0;border-radius:12px;border:1px solid #333;padding:0;overflow:hidden}
-.m.tik .tik-head{background:#222;padding:8px 14px;display:flex;align-items:center;gap:8px;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--red)}
-.m.tik .tik-body{padding:12px 14px;font-size:13px;line-height:1.55;white-space:pre-wrap}
-.m.tik .tik-caption{padding:8px 14px 12px;font-style:italic;font-size:12px;color:#aaa;border-top:1px solid #333}
+/* Paper texture */
+.widget.dark-tex-a .panel.brag{background-image:url(guardian-texture-pB.svg);background-repeat:repeat;background-size:360px auto}
+.widget.dark-tex-b .panel.brag{background-image:url(guardian-texture-B-texture.svg);background-repeat:repeat;background-size:160px auto}
+.widget.dark-tex-c .panel.brag{background-image:url(guardian-texture-C-warm.svg);background-repeat:repeat;background-size:160px auto}
 
+/* Slide transition */
+.widget.use-slide .panel{transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.widget.use-slide .panel.brag{transform:translateX(100%)}
+.widget.use-slide.brag-mode .panel.travel{transform:translateX(-100%)}
+.widget.use-slide.brag-mode .panel.brag{transform:translateX(0)}
+
+/* Wipe transition */
+.widget.use-wipe .panel.travel{transition:clip-path .4s cubic-bezier(.4,0,.2,1);clip-path:inset(0 0 0 0)}
+.widget.use-wipe .panel.brag{opacity:1}
+.widget.use-wipe.brag-mode .panel.travel{clip-path:inset(0 100% 0 0)}
+
+/* Wipe orange bar */
+.wipe-bar{position:absolute;inset:0;z-index:10;background:#f56115;transform:translateX(-101%);pointer-events:none}
+.wipe-bar.go{animation:wipeAcross .4s cubic-bezier(.4,0,.2,1) both}
+@keyframes wipeAcross{0%{transform:translateX(-101%)}45%{transform:translateX(0)}55%{transform:translateX(0)}100%{transform:translateX(101%)}}
+
+/* ============ TRAVEL PANEL CONTENT ============ */
+.t-avatar{display:flex;align-items:center;justify-content:center;padding:20px 20px 8px;height:120px;flex-shrink:0}
+.t-av-circle{width:80px;height:80px;border-radius:50%;border:2px solid #2d6bf1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff}
+.t-av-circle .t-av-txt{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;color:#2d6bf1}
+.t-av-circle .t-av-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#2d6bf1;text-transform:uppercase;letter-spacing:.1em}
+.t-intro{padding:8px 20px 16px;font-size:14px;line-height:1.6;color:#333}
+.t-prompts{padding:0 20px 16px;display:flex;flex-wrap:wrap;gap:8px}
+.t-pr{padding:10px 18px;border-radius:50px;border:none;background:#2d6bf1;color:#fff;font-family:'Noto Sans',sans-serif;font-size:14px;cursor:pointer}
+.t-pr:hover{background:#1f4caf}
+.t-pr-brag{display:inline-block;margin:0 20px 16px;padding:2px 6px;border-radius:4px;border:none;background:#5ed47b;color:#111;font-family:'Noto Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;line-height:1.4}
+.t-pr-brag:hover{background:#49c068}
+
+/* ============ BRAG PANEL CONTENT ============ */
+.b-avatar{display:flex;align-items:center;justify-content:center;height:220px;flex-shrink:0}
+.b-coach{
+  width:200px;height:200px;border-radius:50%;border:2px dashed #f56115;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:#1a1a1a;
+}
+.b-coach-q{font-family:'IBM Plex Mono',monospace;font-size:54px;font-weight:700;color:#f56115}
+.b-mascot{width:120%;height:120%;margin:-10%;object-fit:contain;display:none}
+.b-coach.has-mascot .b-coach-q,.b-coach.has-mascot .b-coach-lbl{display:none}
+.b-coach.has-mascot .b-mascot{display:block}
+.b-coach.has-mascot{border:none;overflow:hidden;background:transparent;border-radius:50%}
+.b-coach-lbl{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#f56115;text-transform:uppercase;letter-spacing:.1em}
+@keyframes pop{0%{transform:scale(.8);opacity:0}40%{transform:scale(.9,1.12);opacity:1}60%{transform:scale(1.08,.92)}80%{transform:scale(.97,1.03)}100%{transform:scale(1)}}
+.b-coach.pop{animation:pop .5s cubic-bezier(.34,1.56,.64,1) both}
+
+
+.b-text{text-align:center;padding:28px 20px 16px}
+.b-ready{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:#aaa}
+.b-name{font-family:'IBM Plex Mono',monospace;font-size:38px;font-weight:700;color:#fff;line-height:1}
+.b-traits{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:#aaa;margin-top:8px;letter-spacing:.05em}
+.b-sub{font-size:13px;color:#5dd57a;margin-top:6px;font-family:'IBM Plex Mono',monospace}
+.b-sub2{font-size:12px;color:#888;margin-top:2px;font-family:'IBM Plex Mono',monospace}
+
+.b-prompts{padding:0 20px 16px;display:flex;flex-wrap:wrap;gap:8px}
+.b-pr{padding:10px 16px;border-radius:50px;border:1.5px solid #666;background:#1a1a1a;color:#ddd;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;text-align:left}
+.b-pr:hover{border-color:#aaa;color:#fff;background:#222}
+
+
+/* ============ MESSAGES ============ */
+.msgs{padding:16px 20px;display:flex;flex-direction:column;gap:10px;flex:1;min-height:0}
+.msgs.hidden{display:none}
+.m-row{display:flex;gap:10px;align-items:flex-start;animation:fadeUp .3s ease both}
+.m-av{width:34px;height:34px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:2px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px}
+.m-av.travel-av{background:#2d6bf1;color:#fff}
+.m-av.brag-av{background:#1a1a1a;border:1.5px solid #f56115;color:#f56115;font-size:15px}
+
+.msg{max-width:82%;padding:12px 16px;font-family:'Noto Sans',sans-serif;font-size:14px;line-height:1.55;white-space:pre-wrap;animation:fadeUp .3s ease both}
+/* Travel msgs */
+.msg.bot-t{background:#dcdcdc;color:#000;border-radius:12px 12px 12px 2px}
+.msg.usr-t{background:#fff;color:#000;border-radius:12px 12px 2px 12px;align-self:flex-end}
+/* Brag msgs */
+.msg.bot-b{background:#222;color:#fff;border-radius:2px}
+.msg.usr-b{background:#333;color:#fff;border-radius:2px;align-self:flex-end}
+.msg.cap{border-left:3px solid #f56115}
+.msg .tags{color:#5da8f5;font-size:12px;margin-top:5px}
+.msg.df{border-left:3px solid #5dd57a}
+.msg.err{border-left:3px solid #eb3b26;color:#ff6b5a}
+.msg.ld{color:#f56115;font-style:italic}
+
+/* Comeback items */
 .cb-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
-.cb-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;background:#222;border-radius:2px;border:1px solid #333;transition:border-color .15s}
-.cb-item:hover{border-color:#555}
-.cb-item .cb-text{flex:1;font-size:14px;line-height:1.4;color:#fff}
-.cb-item .cb-cp{font-size:11px;padding:5px 12px;border:1px solid #555;background:#1a1a1a;color:#ccc;cursor:pointer;border-radius:2px;white-space:nowrap;flex-shrink:0;transition:all .15s;font-family:'IBM Plex Mono',monospace}
-.cb-item .cb-cp:hover{border-color:#999;color:#fff}
-.cb-item .cb-cp.done{border-color:var(--green);color:var(--green)}
+.cb-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;background:#2a2a2a;border-radius:2px;border:1px solid #444}
+.cb-item:hover{border-color:#666}
+.cb-text{flex:1;font-size:14px;line-height:1.4;color:#fff}
+.cb-cp{font-size:11px;padding:5px 12px;border:1px solid #666;background:#222;color:#ddd;cursor:pointer;border-radius:2px;font-family:'IBM Plex Mono',monospace}
+.cb-cp:hover{border-color:#aaa;color:#fff}
+.cb-cp.done{border-color:#5dd57a;color:#5dd57a}
 
-.acts{display:flex;gap:6px;margin-top:8px;padding-top:7px;border-top:1px solid #333;position:relative}
-.ab{font-size:11px;padding:4px 12px;border:1px solid #555;background:#1a1a1a;color:#ccc;cursor:pointer;border-radius:2px;transition:all .15s;font-family:'IBM Plex Mono',monospace}
-.ab:hover{border-color:#999;color:#fff}
-.ab.cp{border-color:var(--green);color:var(--green)}
+/* Action buttons */
+.acts{display:flex;gap:6px;margin-top:8px;padding-top:7px;border-top:1px solid #444}
+.act-btn{font-size:11px;padding:4px 12px;border:1px solid #666;background:#222;color:#ddd;cursor:pointer;border-radius:2px;font-family:'IBM Plex Mono',monospace}
+.act-btn:hover{border-color:#aaa;color:#fff}
+.act-btn.copied{border-color:#5dd57a;color:#5dd57a}
 
-.inp-area{padding:12px 18px 18px;border-top:1px solid #222;display:flex;gap:8px;flex-shrink:0}
-.inp{flex:1;background:#1a1a1a;border:1px solid #333;border-radius:2px;padding:12px 14px;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:14px;outline:none}
-.inp:focus{border-color:var(--green);outline:2px solid var(--green);outline-offset:-2px}
-.inp::placeholder{color:#555}
-.snd{background:var(--green);border:none;border-radius:2px;padding:12px 18px;color:#111;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.05em;transition:background .15s}
-.snd:hover{background:#49a860}
-.snd:active{transform:scale(.96)}
-
-@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-@keyframes pl{0%,100%{opacity:1}50%{opacity:.4}}
-
-/* === MOBILE BOTTOM SHEET === */
-.mob-sheet{
-  display:none;
-  position:absolute;bottom:0;left:0;right:0;z-index:300;
-  background:#111;
-  border-radius:16px 16px 0 0;
-  transform:translateY(100%);
-  transition:transform .4s cubic-bezier(.4,0,.15,1);
-  flex-direction:column;
-  height:85vh;
-  box-shadow:0 -8px 40px rgba(0,0,0,.6);
+/* ============ INPUT ============ */
+.w-input{
+  position:relative;z-index:5;padding:12px 16px;
+  display:flex;gap:8px;align-items:center;flex-shrink:0;
+  background:#fff;border-top:1px solid #e0e0e0;
+  transition:background .4s,border-color .4s;
 }
-.mob-sheet.open{transform:translateY(0)}
+.widget.brag-mode .w-input{background:#161616;border-color:#333}
+.inp{
+  flex:1;border:1.5px solid #ddd;border-radius:50px;padding:14px 20px;
+  font-family:'Noto Sans',sans-serif;font-size:15px;color:#333;
+  outline:none;background:transparent;transition:border-color .3s,color .3s;
+}
+.inp:focus{border-color:#2d6bf1}
+.inp::placeholder{color:#999}
+.widget.brag-mode .inp{border-color:#444;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:14px}
+.widget.brag-mode .inp:focus{border-color:#5dd57a}
+.widget.brag-mode .inp::placeholder{color:#777}
+.snd{
+  width:44px;height:44px;border-radius:50%;border:none;flex-shrink:0;
+  background:#2d6bf1;color:#fff;font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .3s;
+}
+.snd:hover{background:#1f4caf}
+.widget.brag-mode .snd{background:#5dd57a;color:#161616}
+.widget.brag-mode .snd:hover{background:#49a860}
 
-.mob-handle{padding:10px 0 4px;display:flex;justify-content:center;cursor:pointer;flex-shrink:0}
-.mob-bar{width:36px;height:4px;border-radius:2px;background:#333}
+.powered{
+  text-align:center;padding:6px;font-size:10px;flex-shrink:0;
+  color:#525252;background:#fff;transition:background .4s,color .4s;
+}
+.widget.brag-mode .powered{color:#555;background:#161616}
 
-/* Tabs */
-.mob-tabs{
-  display:flex;padding:4px 16px 0;gap:0;border-bottom:1px solid #222;flex-shrink:0;
-}
-.mob-tab{
-  flex:1;
-  padding:12px 8px 10px;
-  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;
-  text-transform:uppercase;letter-spacing:.08em;
-  color:#666;background:none;border:none;
-  border-bottom:2px solid transparent;
-  cursor:pointer;transition:all .2s;
-  position:relative;
-  display:flex;align-items:center;justify-content:center;gap:4px;
-}
-.mob-tab:hover{color:#999}
-.mob-tab.active{color:#fff;border-bottom-color:var(--green)}
-.mob-tab-dot{
-  width:6px;height:6px;border-radius:50%;background:var(--green);
-  display:none;
-}
-.mob-tab-dot.show{display:inline-block;animation:pdot 2s ease-in-out infinite}
-
-/* Panels */
-.mob-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-.mob-panel.hidden{display:none}
-
-/* Search tab */
-.mob-search-inner{padding:20px 18px;display:flex;flex-direction:column;gap:14px}
-.mob-search-label{
-  font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;
-  letter-spacing:.15em;color:#666;
-}
-.mob-search-input{
-  width:100%;background:#1a1a1a;border:1.5px solid #333;border-radius:3px;
-  padding:14px 16px;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:14px;outline:none;
-}
-.mob-search-input:focus{border-color:#fff}
-.mob-search-input::placeholder{color:#555}
-.mob-search-btn{
-  align-self:flex-start;
-  background:#fff;color:#111;border:none;
-  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.06em;
-  padding:12px 24px;border-radius:3px;cursor:pointer;
-  transition:background .15s;
-  display:flex;align-items:center;
-}
-.mob-search-btn:hover{background:#ddd}
-.mob-search-btn:active{transform:scale(.97)}
-
-.mob-search-quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-.mob-sq-label{
-  width:100%;font-family:'IBM Plex Mono',monospace;font-size:9px;
-  text-transform:uppercase;letter-spacing:.15em;color:#555;margin-bottom:0;
-}
-.mob-sq{
-  font-family:'IBM Plex Mono',monospace;font-size:11px;
-  padding:8px 14px;border:1px solid #333;background:#1a1a1a;color:#ccc;
-  border-radius:50px;cursor:pointer;transition:all .15s;
-}
-.mob-sq:hover{border-color:#666;color:#fff}
-
-/* Brag tab */
-.mob-brag-welcome{text-align:center;padding:20px 16px 12px;flex-shrink:0}
-.mob-brag-welcome.collapsed{display:none}
-.mob-brag-mini{padding:8px 16px;border-bottom:1px solid #222;display:none;align-items:center;gap:8px;flex-shrink:0}
-.mob-brag-mini.show{display:flex}
-.mob-msgs{padding:12px 16px}
-.mob-inp-area{padding:10px 16px 16px}
-
-/* Search results mock */
-.mob-results{padding:16px 18px;flex:1;overflow-y:auto}
-.mob-result{
-  padding:14px 0;border-bottom:1px solid #222;
-  animation:fu .3s ease both;
-}
-.mob-result:first-child{animation-delay:.05s}
-.mob-result:nth-child(2){animation-delay:.1s}
-.mob-result:nth-child(3){animation-delay:.15s}
-.mob-result .mr-title{font-family:'Source Sans 3',sans-serif;font-size:16px;font-weight:600;color:var(--blue);margin-bottom:2px}
-.mob-result .mr-url{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#555;margin-bottom:4px}
-.mob-result .mr-desc{font-family:'Source Sans 3',sans-serif;font-size:13px;color:#999;line-height:1.4}
-
-/* Responsive: mobile layout */
-@media(max-width:768px){
-  .search-pill,.char-peek{display:none!important}
-  .merge-wrap{border:none!important;background:none!important;box-shadow:none!important;width:auto!important}
-  .top-bar{justify-content:flex-end;padding:6px 12px;gap:0}
-  .mob-sheet{display:flex}
-}
-/* Force mobile via toggle */
-.force-mobile .search-pill,
-.force-mobile .char-peek{display:none!important}
-.force-mobile .merge-wrap{border:none!important;background:none!important;box-shadow:none!important;width:auto!important}
-.force-mobile .top-bar{justify-content:flex-end;padding:6px 12px;gap:0}
-.force-mobile .mob-sheet{display:flex}
-
-/* Mobile frame (when forced) */
-.force-mobile .main{
-  max-width:390px;
-  margin-left:auto;margin-right:auto;
-  border-left:2px solid #333;
-  border-right:2px solid #333;
-  border-radius:0 0 20px 20px;
-  overflow:hidden;
-}
-
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 </style>
 </head>
 <body>
 
-<div class="sw">
+<!-- OPTIONS BAR -->
+<div class="opts">
   <span class="lb">Page</span>
-  <button class="on" onclick="go('home',this)">Homepage</button>
-  <button onclick="go('events',this)">Events</button>
-  <button onclick="go('downtown',this)">Downtown</button>
-  <button onclick="go('mabels',this)">Mabel's BBQ</button>
-  <button onclick="go('music',this)">Music</button>
-  <span style="margin-left:auto;display:flex;align-items:center;gap:10px">
-    <button id="devDesk" class="on" onclick="setDevice('desktop')" style="font-size:10px">Desktop</button>
-    <button id="devMob" onclick="setDevice('mobile')" style="font-size:10px">Mobile</button>
-    <span style="width:1px;height:16px;background:#333"></span>
-    <input type="checkbox" id="peekToggle" onchange="togglePeek()" style="margin:0;cursor:pointer">
-    <label for="peekToggle" style="font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#666;cursor:pointer;white-space:nowrap">Character Peek</label>
-  </span>
+  <button class="on" onclick="setPage('home',this)">Home</button>
+  <button onclick="setPage('events',this)">Events</button>
+  <button onclick="setPage('downtown',this)">Downtown</button>
+  <button onclick="setPage('mabels',this)">Mabel's</button>
+  <button onclick="setPage('music',this)">Music</button>
+  <div class="sep"></div>
+  <span class="lb">View</span>
+  <select onchange="setView(this.value)"><option value="desktop">Desktop</option><option value="mobile">Mobile</option></select>
+  <div class="sep"></div>
+  <span class="lb">Dark Tex</span>
+  <select onchange="setDarkTex(this.value)">
+    <option value="a" selected>Guardian</option>
+    <option value="off">None</option>
+    <option value="b">Texture</option>
+    <option value="c">Warm</option>
+  </select>
 </div>
 
-<div class="main">
-  <div class="pg-bg" id="bg-home"></div>
-  <div class="pg-bg hidden" id="bg-events"></div>
-  <div class="pg-bg hidden" id="bg-downtown"></div>
-  <div class="pg-bg hidden" id="bg-mabels"></div>
-  <div class="pg-bg hidden" id="bg-music"></div>
+<!-- WIDGET -->
+<div class="widget-wrap">
+<div class="mascot-picker" id="mascotPicker">
+  <button class="active" onclick="setMascot('none',this)" title="Default"><span class="mp-none">?</span></button>
+  <button onclick="setMascot('doga',this)" title="Dog A"><img src="mascot-doga.png" alt="Dog A"></button>
+  <button onclick="setMascot('dogb',this)" title="Dog B"><img src="mascot-dogb.png" alt="Dog B"></button>
+  <button onclick="setMascot('guardian',this)" title="Guardian"><img src="mascot-guardian.png" alt="Guardian"></button>
+  <button onclick="setMascot('mega',this)" title="Megaphone"><img src="mascot-megaphone.png" alt="Megaphone"></button>
+</div>
+<div class="widget use-slide dark-tex-a" id="W">
+  <div class="wipe-bar" id="wipeBar"></div>
 
-  <!-- TOP BAR: pill on left, site icons on right -->
-  <div class="top-bar">
-    <div class="merge-wrap" id="mergeWrap">
-    <div class="search-pill" id="pill" onclick="openC()">
-      <span id="pillTxt">SEARCH OR CHAT WITH OUR ASSISTANT</span>
-      <span class="ico" id="pillIco">⌕</span>
-      <span class="brag-label" id="bragLabel" onclick="event.stopPropagation();triggerBrag()">BRAG</span>
-      <div class="char-peek" id="charPeek" onclick="event.stopPropagation();openC()">
-        <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="60" cy="60" r="56" fill="#111" stroke="#f66116" stroke-width="2"/>
-          <circle cx="60" cy="40" r="18" stroke="#f66116" stroke-width="2" stroke-dasharray="4 3" fill="none"/>
-          <path d="M36 34 Q60 24 84 34" stroke="#f66116" stroke-width="2" stroke-dasharray="4 3" fill="none"/>
-          <text x="60" y="46" text-anchor="middle" font-family="IBM Plex Mono" font-size="20" font-weight="700" fill="#f66116">?</text>
-        </svg>
-      </div>
-    </div>
-      <button class="site-icon" id="searchIcon" onclick="openC()">
-        <span class="si-dot" id="siDot"></span>
-        <svg viewBox="0 0 26 26" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round">
-          <circle cx="11" cy="11" r="7.5"/>
-          <line x1="16" y1="16" x2="22" y2="22"/>
-        </svg>
-        <span class="si-lbl">Search</span>
-      </button>
-    </div>
-      <button class="site-icon" onclick="alert('Menu flyout')">
-        <svg viewBox="0 0 26 26" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round">
-          <line x1="3" y1="6" x2="23" y2="6"/>
-          <line x1="3" y1="13" x2="23" y2="13"/>
-          <line x1="3" y1="20" x2="23" y2="20"/>
-        </svg>
-        <span class="si-lbl">Menu</span>
-      </button>
-      <button class="site-icon">
-        <svg viewBox="0 0 26 26" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round">
-          <path d="M3 5l6.5-2 7 3 6.5-3v18l-6.5 3-7-3-6.5 2z"/>
-          <line x1="9.5" y1="3" x2="9.5" y2="21"/>
-          <line x1="16.5" y1="6" x2="16.5" y2="24"/>
-        </svg>
-        <span class="si-lbl">Area Map</span>
-      </button>
-      <button class="site-icon">
-        <svg viewBox="0 0 26 26" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round">
-          <rect x="3" y="4" width="20" height="19" rx="2"/>
-          <line x1="3" y1="10" x2="23" y2="10"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="18" y1="2" x2="18" y2="6"/>
-          <rect x="7" y="14" width="3.5" height="3.5" rx=".5" fill="#fff" stroke="none"/>
-        </svg>
-        <span class="si-lbl">Calendar</span>
-      </button>
+  <!-- HEADER -->
+  <div class="w-header">
+    <div class="w-logo"><svg xmlns="http://www.w3.org/2000/svg" fill="#ffffff" viewBox="0 0 48 24"><path d="M3.953,20.053c-2.35-3.568,1.517-8.37,5.097-9.157l1.086,1.346l-0.732,2.034l1.827-0.689l0.695-1.698 l-1.681-2.06c-0.194,0.07-13.259,3.064-9.222,10.63c4.341,8.136,18.259-3.845,23.744-1.401l0.696-2.345 C18.145,15.359,8.178,26.468,3.953,20.053z"/><path d="M11.222,19.54c0.795,0.048,1.793-1.274,2.317-2.066c0.043,0.099,0.096,0.195,0.162,0.288 c0.837,1.191,2.364,0.897,3.995-1.999c2.139-3.518-0.511,1.964,1.83,1.114c2.116-0.768,3.06-5.589,3.06-5.589l-1.338,0.458 c-0.428,4.09-1.978,4.482-1.978,4.482s0.679-1.315,0.679-2.408c0-1.094-0.353-1.503-0.717-1.414 c-0.678,0.165-1.122,1.901-2.056,3.217c-0.274,0.386-1.934,2.327-2.164,0.852c0,0,2.825-0.991,1.904-2.959 c-0.489-1.044-3.564,1.459-3.5,3.181c0.002,0.064-0.702,1.319-1.08,1.298c-0.463-0.026,2.242-6.801,2.242-6.801l-1.612,0.515 l-2.362,6.389C10.604,18.099,10.09,19.471,11.222,19.54z M16.325,14.237c0.154,0.926-1.004,1.523-1.004,1.523 C14.756,15.764,16.222,13.619,16.325,14.237z"/><path d="M44.047,7.414c-0.463-0.027,2.11-6.686,2.11-6.686l-1.612,0.539L43.38,4.534l-0.005,0.002L43.216,4.9 c-1.038-0.749-2.808,0.763-3.499,2.43c-0.076,0.184-0.142,0.402-0.188,0.596c-0.289,0.869-1.035,2.039-1.275,1.947 c-0.749-0.29,1.259-3.186,0.522-3.642c-0.866-0.536-2.309,1.264-2.309,1.264l0.257-0.742l-1.099,0.353l-0.956,2.74 c-0.416,0.972-0.911,1.784-1.393,1.686c-0.749-0.152,1.13-4.036,1.13-4.036l-1.34,0.449l-0.158,0.364 c-1.038-0.749-2.808,0.763-3.499,2.43c-0.13,0.314-0.615,1.022-1.021,1.528c-0.195,0.22-0.352,0.361-0.421,0.357 c-0.463-0.026,2.114-6.541,2.114-6.541l-1.612,0.515l-1.817,5.057l-0.069,0.165c0,0-2.415,3.838-2.733,1.799 c0,0,2.825-0.991,1.904-2.959c-0.566-1.209-4.631,2.23-3.216,4.246c0.77,1.097,1.991,0.673,3.585-1.66 c-0.006,0.068-0.007,0.145-0.003,0.224c0.023,0.378,0.189,0.821,0.738,0.807c0.441-0.011,1.032-0.57,1.304-0.878 c0.37-0.388,0.709-0.852,0.957-1.221c-0.043,0.406,0.021,0.982,0.432,1.128c1.106,0.393,2.244-1.036,2.588-1.517 c0.068-0.095,0,0,0,0c0.431,1.656,1.746-0.075,2.006-0.441l-0.257,0.783l1.289-0.433c0.477-1.302,1.112-3.498,2.197-3.677 c0.675-0.111-0.806,2.147,0.124,2.694c0.852,0.501,1.782-1.091,1.968-1.309c0.06,0.224,0.18,0.416,0.393,0.492 c0.96,0.341,1.943-0.689,2.411-1.283c0.092,0.221,0.286,0.395,0.66,0.42c1.553,0.106,2.676-2.768,2.676-2.768l-0.412,0.072 C45.196,6.336,44.51,7.441,44.047,7.414z M25.163,11.379c0.154,0.927-1.004,1.523-1.004,1.523 C23.593,12.906,25.06,10.761,25.163,11.379z M32.171,10.317c-1.264,2.474-2.619,1.614-1.484-0.202 c1.008-1.613,1.961-1.063,1.961-1.063L32.171,10.317z M40.995,6.707c1.008-1.613,1.961-1.063,1.961-1.063l-0.476,1.264 C41.215,9.382,39.86,8.522,40.995,6.707z"/><path d="M47.119,0.667c0.351,0,0.631,0.286,0.631,0.636c0,0.356-0.28,0.639-0.634,0.639 c-0.351,0-0.636-0.283-0.636-0.639c0-0.351,0.286-0.636,0.636-0.636H47.119z M47.114,0.794c-0.266,0-0.481,0.229-0.481,0.512 c0,0.286,0.215,0.509,0.484,0.509c0.269,0.003,0.486-0.223,0.486-0.509c0-0.283-0.218-0.512-0.486-0.512H47.114z M47.006,1.674 h-0.15V0.967c0.057-0.009,0.119-0.02,0.226-0.02c0.122,0,0.195,0.02,0.243,0.057c0.04,0.031,0.062,0.079,0.062,0.153 c0,0.085-0.059,0.144-0.136,0.164v0.006c0.062,0.011,0.102,0.068,0.113,0.173c0.014,0.11,0.028,0.153,0.04,0.175h-0.156 c-0.017-0.025-0.028-0.088-0.042-0.184c-0.011-0.076-0.057-0.107-0.133-0.107h-0.068V1.674z M47.006,1.267h0.071 c0.088,0,0.156-0.028,0.156-0.102c0-0.059-0.042-0.105-0.144-0.105c-0.037,0-0.062,0-0.082,0.003V1.267z"/></svg></div>
+    <button class="min-btn" onclick="toggleMin()">&#8722;</button>
   </div>
 
-  <div class="ov" id="ov" onclick="closeC()"></div>
+  <!-- MODE BAR (single button, never inside panels) -->
+  <div class="mode-bar">
+    <button class="mode-btn to-brag" id="modeBtn" onclick="doSwitch()">Chat with Brag Coach</button>
+  </div>
 
-  <div class="drop" id="drop">
-    <div class="ch-topbar">
-      <button class="ch-x" onclick="closeC()">×</button>
+  <!-- PANELS -->
+  <div class="panels">
+    <!-- TRAVEL -->
+    <div class="panel travel" id="pTravel">
+      <div class="t-avatar"><div class="t-av-circle"><span class="t-av-txt">DC</span><span class="t-av-lbl">Travel Agent</span></div></div>
+      <div class="t-intro">Hi there! You know those places only the locals know? Let our Destination Cleveland virtual assistant or a live CLE Concierge help you find them with suggestions on things to do, events to attend, restaurants, maps, and other tips.</div>
+      <div class="t-prompts">
+        <button class="t-pr" onclick="travelTap(this.textContent)">Things to Do</button>
+        <button class="t-pr" onclick="travelTap(this.textContent)">Events</button>
+        <button class="t-pr" onclick="travelTap(this.textContent)">2026 Brewery Passport</button>
+        <button class="t-pr" onclick="travelTap(this.textContent)">Trip Planner</button>
+        <button class="t-pr" onclick="travelTap(this.textContent)">Download Our App</button>
+        <button class="t-pr" onclick="travelTap(this.textContent)">Chat With Live CLE Concierge</button>
+      </div>
+      <button class="t-pr-brag" onclick="doSwitch()">Need a Brag Coach?</button>
+      <div class="msgs hidden" id="tMsgs"></div>
     </div>
-    <div class="welcome" id="welcome">
-      <div class="w-char">
-        <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="60" cy="60" r="56" stroke="#333" stroke-width="1" fill="#1a1a1a"/>
-          <circle cx="60" cy="40" r="18" stroke="#f66116" stroke-width="2" stroke-dasharray="4 3" fill="none"/>
-          <path d="M36 34 Q60 24 84 34" stroke="#f66116" stroke-width="2" stroke-dasharray="4 3" fill="none"/>
-          <path d="M28 100 Q28 72 42 62 Q52 56 60 54 Q68 56 78 62 Q92 72 92 100" stroke="#f66116" stroke-width="2" stroke-dasharray="4 3" fill="none"/>
-          <circle cx="66" cy="76" r="4" stroke="#5ed47b" stroke-width="1.5" fill="none"/>
-          <line x1="66" y1="72" x2="66" y2="62" stroke="#5ed47b" stroke-width="1.5"/>
-          <text x="60" y="46" text-anchor="middle" font-family="IBM Plex Mono" font-size="20" font-weight="700" fill="#f66116">?</text>
-        </svg>
+
+    <!-- BRAG -->
+    <div class="panel brag" id="pBrag">
+      <div class="b-avatar">
+        <div class="b-coach" id="coach"><div class="b-coach-q">?</div><div class="b-coach-lbl">Coach</div><img class="b-mascot" id="mascotImg" src="" alt=""></div>
       </div>
-      <div class="w-script">Cleveland</div>
-      <div class="w-ready">READY. SET.</div>
-      <div class="w-name">BRAG</div>
-      <div class="w-weare">WE ARE:</div>
-      <div class="w-traits">
-        <span class="w-trait">Unapologetic</span>
-        <span class="w-trait">Proud</span>
-        <span class="w-trait">Bold</span>
-        <span class="w-trait">Clever</span>
-        <span class="w-trait">Passionate</span>
+      <div class="b-text">
+        <div class="b-ready">READY. SET.</div>
+        <div class="b-name">BRAG</div>
+        <div class="b-traits"><span style="color:#eb3b26">Passionate.</span> <span style="color:#fff">Bold.</span> <span style="color:#5dd57a">Clever.</span> <span style="color:#f56115">Unapologetic.</span> <span style="color:#2d6cf0">Proud.</span></div>
+        <div class="b-sub">Your Cleveland trash talk machine.</div>
+        <div class="b-sub2">Your Brag Coach.</div>
       </div>
-      <div class="w-bottom">★ BEST LOCATION IN THE NATION ★</div>
-    </div>
-    <div class="ch-mini" id="miniHeader">
-      <div class="mini-av">
-        <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="60" cy="60" r="56" stroke="#333" stroke-width="1" fill="#1a1a1a"/>
-          <circle cx="60" cy="40" r="18" stroke="#f66116" stroke-width="2" stroke-dasharray="4 3" fill="none"/>
-          <path d="M36 34 Q60 24 84 34" stroke="#f66116" stroke-width="2" stroke-dasharray="4 3" fill="none"/>
-          <path d="M28 100 Q28 72 42 62 Q60 54 78 62 Q92 72 92 100" stroke="#f66116" stroke-width="2" stroke-dasharray="4 3" fill="none"/>
-          <text x="60" y="46" text-anchor="middle" font-family="IBM Plex Mono" font-size="20" font-weight="700" fill="#f66116">?</text>
-        </svg>
-      </div>
-      <div>
-        <div class="mini-nm">Brag Coach</div>
-        <div class="mini-st">● Online</div>
-      </div>
-    </div>
-    <div class="msgs" id="msgs"></div>
-    <div class="inp-area">
-      <input class="inp" id="inp" placeholder="Talk trash, ask for a caption, roast a city..." onkeydown="if(event.key==='Enter')send()">
-      <button class="snd" onclick="send()">Send</button>
+      <div class="b-prompts" id="bPrompts"></div>
+      <div class="msgs hidden" id="bMsgs"></div>
     </div>
   </div>
 
-  <!-- MOBILE BOTTOM SHEET -->
-  <div class="mob-sheet" id="mobSheet">
-    <div class="mob-handle" onclick="closeMob()"><div class="mob-bar"></div></div>
-    <div class="mob-tabs">
-      <button class="mob-tab active" id="tabSearch" onclick="switchTab('search')">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"><circle cx="8" cy="8" r="5.5"/><line x1="12" y1="12" x2="17" y2="17"/></svg>
-        Search
-      </button>
-      <button class="mob-tab" id="tabBrag" onclick="switchTab('brag')">
-        <span class="mob-tab-dot" id="mobDot"></span>
-        Brag Coach
-      </button>
-    </div>
-
-    <!-- SEARCH TAB CONTENT -->
-    <div class="mob-panel" id="panelSearch">
-      <div class="mob-search-inner">
-        <div class="mob-search-label">Search thisiscleveland.com</div>
-        <input class="mob-search-input" id="mobSearchInput" placeholder="Enter Keywords" onkeydown="if(event.key==='Enter')mobSiteSearch()">
-        <button class="mob-search-btn" onclick="mobSiteSearch()">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:16px;height:16px;vertical-align:-2px;margin-right:6px"><circle cx="8" cy="8" r="5.5"/><line x1="12" y1="12" x2="17" y2="17"/></svg>
-          Search
-        </button>
-        <div class="mob-search-quick">
-          <div class="mob-sq-label">Popular</div>
-          <button class="mob-sq" onclick="mobQuickSearch('Restaurants')">Restaurants</button>
-          <button class="mob-sq" onclick="mobQuickSearch('Events this weekend')">Events this weekend</button>
-          <button class="mob-sq" onclick="mobQuickSearch('Hotels downtown')">Hotels downtown</button>
-          <button class="mob-sq" onclick="mobQuickSearch('Rock Hall')">Rock Hall</button>
-          <button class="mob-sq" onclick="mobQuickSearch('Brewery Passport')">Brewery Passport</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- BRAG TAB CONTENT -->
-    <div class="mob-panel hidden" id="panelBrag">
-      <div class="mob-brag-welcome" id="mobWelcome">
-        <div class="w-script">Cleveland</div>
-        <div class="w-ready">READY. SET.</div>
-        <div class="w-name" style="font-size:40px">BRAG</div>
-        <div class="w-traits" style="margin-top:12px">
-          <span class="w-trait" style="font-size:11px">Unapologetic</span>
-          <span class="w-trait" style="font-size:11px">Proud</span>
-          <span class="w-trait" style="font-size:11px">Bold</span>
-          <span class="w-trait" style="font-size:11px">Clever</span>
-          <span class="w-trait" style="font-size:11px">Passionate</span>
-        </div>
-      </div>
-      <div class="mob-brag-mini" id="mobMini">
-        <div class="mini-av" style="width:28px;height:28px">
-          <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="60" cy="60" r="56" stroke="#333" stroke-width="1" fill="#1a1a1a"/><circle cx="60" cy="40" r="18" stroke="#f66116" stroke-width="2" stroke-dasharray="4 3" fill="none"/><path d="M36 34 Q60 24 84 34" stroke="#f66116" stroke-width="2" stroke-dasharray="4 3" fill="none"/><text x="60" y="46" text-anchor="middle" font-family="IBM Plex Mono" font-size="20" font-weight="700" fill="#f66116">?</text></svg>
-        </div>
-        <div><div class="mini-nm" style="font-size:11px">Brag Coach</div><div class="mini-st" style="font-size:10px">● Online</div></div>
-      </div>
-      <div class="msgs mob-msgs" id="mobMsgs"></div>
-      <div class="inp-area mob-inp-area">
-        <input class="inp" id="mobInp" placeholder="Talk trash, ask for a caption..." onkeydown="if(event.key==='Enter')mobSend()">
-        <button class="snd" onclick="mobSend()">Send</button>
-      </div>
-    </div>
+  <!-- INPUT -->
+  <div class="w-input">
+    <input class="inp" id="inp" placeholder="How can I help you?" onkeydown="if(event.key==='Enter')send()">
+    <button class="snd" onclick="send()">&#8593;</button>
   </div>
+  <div class="powered">Powered By Satisfi Labs</div>
+</div>
 </div>
 
 <script>
-const CFG={
-  home:{bar:"SEARCH OR CHAT WITH OUR ASSISTANT",cycle:["SEARCH OR CHAT WITH OUR ASSISTANT","SHOW ME SPACES FOR MY CONFERENCE","WHAT'S HAPPENING THIS WEEKEND"],brag:false,ctx:'You\u2019re on the <b>Homepage</b>',prompts:[{t:"Hype me up about Cleveland",c:"o"},{t:"Write me an Instagram caption",c:"n"},{t:"Give me a comeback for haters",c:"n"},{t:"What\u2019s happening this weekend?",c:"g"}]},
-  events:{bar:"WHAT'S HAPPENING THIS WEEKEND",cycle:["WHAT'S HAPPENING THIS WEEKEND","FIND EVENTS NEAR ME","CONCERTS THIS WEEKEND"],brag:false,ctx:'You\u2019re on <b>Events</b>',prompts:[{t:"Write a caption for tonight\u2019s event",c:"g"},{t:"Roast someone who says CLE has nothing going on",c:"n"},{t:"Hype up the Guardians home opener",c:"g"},{t:"Tell me something fun this weekend",c:"g"}]},
-  downtown:{bar:"EXPLORE DOWNTOWN CLEVELAND",cycle:["EXPLORE DOWNTOWN CLEVELAND","BRAG ABOUT HOW GREAT THIS LOOKS","TELL SOMEONE DOWNTOWN IS ALIVE AND LOUD","FIND RESTAURANTS ON E. 4TH"],brag:true,ctx:'You\u2019re on <b>Downtown Cleveland</b>',prompts:[{t:"Caption for my E. 4th Street pic",c:"o"},{t:"Comeback for \"downtown is dead\"",c:"n"},{t:"Best brag about Playhouse Square",c:"o"},{t:"Where should I eat downtown?",c:"b"}]},
-  mabels:{bar:"MABEL'S BBQ  |  DOWNTOWN CLEVELAND",cycle:["MABEL'S BBQ  |  DOWNTOWN CLEVELAND","TELL YOUR FRIENDS THIS BBQ IS UNREAL","WHY CLEVELAND BBQ HITS DIFFERENT"],brag:true,ctx:'You\u2019re on <b>Mabel\u2019s BBQ</b>',prompts:[{t:"Instagram caption for this brisket",c:"b"},{t:"Why is Cleveland BBQ better than Texas?",c:"b"},{t:"DM to send my friend about this place",c:"n"},{t:"What else should I try downtown?",c:"b"}]},
-  music:{bar:"FROM ROCK TO BACH: CLEVELAND'S MUSIC SCENE",cycle:["FROM ROCK TO BACH: CLEVELAND'S MUSIC SCENE","SAY HOW MUCH COOLER THIS IS THAN DETROIT","BRAG ABOUT THE ROCK HALL TO SOMEONE WHO DOUBTS","CLEVELAND INVENTED ROCK AND ROLL. SAY IT."],brag:true,ctx:'You\u2019re on <b>Music / Things To Do</b>',prompts:[{t:"Caption for my Rock Hall visit",c:"o"},{t:"Roast someone who says CLE has no music scene",c:"n"},{t:"Brag about the Cleveland Orchestra",c:"o"},{t:"TikTok idea for a concert tonight",c:"g"}]}
+let mode='travel', page='home', trans='slide';
+
+const PAGES={
+  home:{prompts:["Hype me up about Cleveland","Give me a comeback for haters","Write me an Instagram caption","Craft a DM inviting my friend to visit Cleveland"]},
+  events:{prompts:["Write a caption for tonight's event","Roast someone who says CLE has nothing going on","Hype up the Guardians home opener","Tell me something fun this weekend"]},
+  downtown:{prompts:["Caption for my E. 4th Street pic","Comeback for \"downtown is dead\"","Best brag about Playhouse Square","Where should I eat downtown?"]},
+  mabels:{prompts:["Instagram caption for this brisket","Why is Cleveland BBQ better than Texas?","DM to send my friend about this place","What else should I try downtown?"]},
+  music:{prompts:["Caption for my Rock Hall visit","Roast someone who says CLE has no music scene","Brag about the Cleveland Orchestra","TikTok idea for a concert tonight"]}
 };
 
 const R={
-"Hype me up about Cleveland":"Cleveland\u2019s food scene is built like the city itself: tough, creative, and allergic to being boring.\n\nStart Downtown where chefs are putting new-school twists on old-school comfort, then go chase the classics like corned beef and the legendary Polish Boy.\n\nGot a sweet tooth? Go hunt down locally made ice cream, Hong Kong street waffles, or beer-infused donuts at Brewnuts.\n\nAnd if you want to drink your way through the city with purpose, grab the Brewery Passport and start collecting bragging rights, one craft pour at a time.",
-"Write me an Instagram caption":"Golden hour over The Land and the skyline\u2019s doing what it does: showing off like it earned it, because it did.\n\nCleveland doesn\u2019t pose. Cleveland puts in work, then lets the sunset handle the flex.\n\nNow post it loud, tag it proud, and make somebody outside the 216 ask questions.\n\n#ThisIsCleveland #TheLand #ClevelandRocks",
-"Give me a comeback for haters":"Say it with your chest. Cleveland doesn\u2019t need hype. Cleveland produces receipts.\n\n\"Talk all you want. Cleveland keeps building while you\u2019re still tweeting.\"\n\"Cleveland\u2019s an underdog city. We don\u2019t whine, we win.\"\n\"You ever actually been, or you just recycling jokes from 2009?\"\n\"We don\u2019t \u2018try to be cool.\u2019 We just are. Quietly, stubbornly, permanently.\"\n\"If Cleveland\u2019s so bad, why do people never shut up about it?\"",
-"What\u2019s happening this weekend?":"That\u2019s a little outside my lane. I\u2019m your Cleveland brag coach; I\u2019m here for trash talk, captions, and comebacks. Hit up the events page, find something good, and come back to me. I\u2019ll make whatever you pick sound incredible.",
-"Write a caption for tonight\u2019s event":"\"Cleveland on a weeknight hits harder than your city on a Saturday. Don\u2019t @ me.\"\n\n#CLEnightlife #ThisIsCleveland #TheLandForLivingItUp",
-"Roast someone who says CLE has nothing going on":"Ohio \"boring\" is a skill issue, not a fact.\n\n\"If Ohio\u2019s boring, why do you keep talking about it?\"\n\"Boring people get bored. Ohio stays busy.\"\n\"You\u2019re calling it boring from the comfort of the internet. Bold.\"\n\"Ohio raised grit, builders, and chaos in the best way. You wouldn\u2019t last a weekend.\"\n\"Come visit, or keep reviewing places you\u2019ve never experienced.\"",
-"Hype up the Guardians home opener":"OPENING DAY IN CLEVELAND. The city where baseball matters so much we renamed our whole team for some giant Art Deco statues on a bridge. That\u2019s commitment. That\u2019s love. That\u2019s The Land.\n\n\"Progressive Field therapy session. I\u2019m healing loudly.\"\n\"Nine innings of commitment. I\u2019ve seen Browns fans with less.\"\n\"Guardians baseball: built on grit, finished with noise.\"\n\"Some people watch history. I buy a ticket.\"",
-"Tell me something fun this weekend":"I\u2019m your brag coach, not your event planner. But go check out the events calendar and come back to me. I\u2019ll make whatever you pick sound incredible.",
-"Caption for my E. 4th Street pic":"\"E. 4th Street: where the restaurants have James Beard Awards and the vibes have no expiration date.\"\n\nOr: \"Every block\u2019s a story, every stop\u2019s a \u2018one more round.\u2019 E. 4th understood the assignment.\"\n\n#E4thStreet #CLEeats #DowntownCleveland",
-"Comeback for \"downtown is dead\"":"\"Downtown is dead\"? Playhouse Square is the largest performing arts center outside of New York City. E. 4th is packed every weekend. The Flats are back.\n\n\"Good. Less traffic for the people who get it.\"",
-"Best brag about Playhouse Square":"Playhouse Square is the largest performing arts center outside of New York City. Not second largest. THE largest outside NYC.\n\nWe\u2019ve got drag queens sashaying across stages and rock legends riffing. Your take is just undercooked.",
-"Where should I eat downtown?":"I\u2019m a brag coach, not a waiter. But Cleveland eats loud. Chase the classics: corned beef, the legendary Polish Boy. Drink your way through the city with the Brewery Passport.\n\nNow go eat something and bring me back a caption to write.",
-"Instagram caption for this brisket":"\"Michael Symon put Bertman\u2019s ballpark mustard in the BBQ sauce and called it Cleveland-style. This is what happens when a city refuses to play by the rules. \ud83d\udd25\"\n\n#MabelsBBQ #ClevelandBBQ #E4thStreet #MichaelSymon",
-"Why is Cleveland BBQ better than Texas?":"I\u2019m not here to dunk on other cities, rookie.\n\nBut Cleveland BBQ has its own lane. Bertman\u2019s mustard, Eastern European spices, fruitwood smoke. That\u2019s not copying anyone. That\u2019s IMMIGRANTS who know what FLAVOR is.\n\n\"Cleveland doesn\u2019t just make BBQ. It makes BBQ that could only come from Cleveland.\"",
-"DM to send my friend about this place":"Here\u2019s a DM you can copy paste:\n\n\"Yo. Stop acting like Cleveland is optional. Pull up for a weekend and I\u2019ll prove it. We\u2019re talking lakefront views, real neighborhoods, food that hits and the kind of underdog energy that makes everything feel earned. If you still don\u2019t like it after 48 hours, I\u2019ll let you talk your trash. Deal.\"",
-"What else should I try downtown?":"I\u2019m the brag coach, not Yelp. But if you\u2019re at Mabel\u2019s and don\u2019t walk over to Mitchell\u2019s Ice Cream after, you\u2019re making a mistake. Grab the Brewery Passport too.\n\nNow go and come back with a photo I can caption.",
-"Caption for my Rock Hall visit":"\"History on the walls, future in the speakers. Rock Hall, Cleveland.\"\n\nPunchier: \"Making a legendary moment at the Rock & Roll Hall of Fame. Where music history meets right now.\"\n\n#RockOn #ClevelandRocks #RockHall",
-"Roast someone who says CLE has no music scene":"\"No culture\" is a lazy take.\n\n\"Cleveland has so much public art people stop mid-walk like, \u2018Yo, what is THAT?\u2019 That\u2019s culture.\"\n\"We\u2019ve got drag queens sashaying across stages and rock legends riffing. Your take is just undercooked.\"\n\"If Cleveland had \u2018no culture,\u2019 nobody would be this pressed about it.\"",
-"Brag about the Cleveland Orchestra":"Our city is made up of more than 100 ethnicities. \"Cleveland culture\" is a whole mixtape of communities, food, languages and traditions on the same block.\n\nAnd the Cleveland Orchestra? Top five on the PLANET. Not the country. THE PLANET. Up there with Vienna and Berlin.\n\nDrop that fact and watch the jokes stop.",
-"TikTok idea for a concert tonight":"Film yourself walking in, pan to the stage, then do the \"what I expected vs what I got\" trend but both sides are just Cleveland being incredible.\n\nCaption: \"They said Cleveland has no nightlife. The nightlife:\"\n\n#ClevelandVibes #ClevelandNights",
+"Hype me up about Cleveland":"Cleveland\u2019s food scene is built like the city itself: tough, creative, and allergic to being boring.\n\nStart Downtown where chefs are putting new-school twists on old-school comfort, then go chase the classics like corned beef and the legendary Polish Boy.\n\nGot a sweet tooth? Go hunt down locally made ice cream, Hong Kong street waffles, or beer-infused donuts at Brewnuts.",
+"Write me an Instagram caption":"Golden hour over The Land and the skyline\u2019s doing what it does: showing off like it earned it, because it did.\n\nCleveland doesn\u2019t pose. Cleveland puts in work, then lets the sunset handle the flex.\n\n#ThisIsCleveland #TheLand #ClevelandRocks",
+"Give me a comeback for haters":"Say it with your chest. Cleveland doesn\u2019t need hype. Cleveland produces receipts.\n\n\"Talk all you want. Cleveland keeps building while you\u2019re still tweeting.\"\n\"Cleveland\u2019s an underdog city. We don\u2019t whine, we win.\"\n\"You ever actually been, or you just recycling jokes from 2009?\"\n\"If Cleveland\u2019s so bad, why do people never shut up about it?\"",
+"Craft a DM inviting my friend to visit Cleveland":"Here\u2019s a DM you can copy paste:\n\nYo. Stop acting like Cleveland is optional. Pull up for a weekend and I\u2019ll prove it. We\u2019re talking lakefront views, real neighborhoods, food that hits and the kind of underdog energy that makes everything feel earned.",
+"Instagram caption for this brisket":"\"Michael Symon put Bertman\u2019s ballpark mustard in the BBQ sauce and called it Cleveland-style. This is what happens when a city refuses to play by the rules.\"\n\n#MabelsBBQ #ClevelandBBQ #MichaelSymon",
+"Caption for my Rock Hall visit":"\"History on the walls, future in the speakers. Rock Hall, Cleveland.\"\n\nPunchier: \"Making a legendary moment at the Rock & Roll Hall of Fame.\"\n\n#RockOn #ClevelandRocks #RockHall"
 };
 
-const DF="That\u2019s outside my lane. I\u2019m your Cleveland brag coach: trash talk, captions, and comebacks. Try one of these:";
-const LD=["Cooking up something good...","Sharpening the trash talk...","Consulting the Guardians...","Checking with the bridge..."];
-const DW=["weather","crime","lebron","politics","directions","population","time zone"];
+const LOADING=["Cooking up something good...","Sharpening the trash talk...","Consulting the Guardians...","Checking with the bridge..."];
+const DEFLECT_WORDS=["weather","crime","lebron","politics","directions","population"];
+const DEFLECT_MSG="That\u2019s outside my lane. I\u2019m your Cleveland brag coach: trash talk, captions, and comebacks.";
+const AV='<div class="m-av brag-av">?</div>';
 
-let cur='home';
-let chatStarted=false;
-let cycleIdx=0;
-let cycleTimer=null;
-
-const MINI_SVG='<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="60" cy="60" r="56" stroke="#333" stroke-width="1" fill="#1a1a1a"/><circle cx="60" cy="40" r="18" stroke="#f66116" stroke-width="2" stroke-dasharray="4 3" fill="none"/><path d="M36 34 Q60 24 84 34" stroke="#f66116" stroke-width="2" stroke-dasharray="4 3" fill="none"/><path d="M28 100 Q28 72 42 62 Q60 54 78 62 Q92 72 92 100" stroke="#f66116" stroke-width="2" stroke-dasharray="4 3" fill="none"/><text x="60" y="46" text-anchor="middle" font-family="IBM Plex Mono" font-size="20" font-weight="700" fill="#f66116">?</text></svg>';
-
-function go(p,btn){
-  cur=p;
-  document.querySelectorAll('.sw button').forEach(b=>b.classList.remove('on'));
+// === OPTIONS ===
+function setPage(p,btn){
+  page=p;
+  document.querySelectorAll('.opts button').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  document.querySelectorAll('.pg-bg').forEach(el=>el.classList.add('hidden'));
-  document.getElementById('bg-'+p).classList.remove('hidden');
-  render();
-  closeC();
-  closeMob();
+  renderPrompts();
+  if(mode==='brag') doSwitch();
 }
-
-function render(){
-  const c=CFG[cur];
-  cycleIdx=0;
-  document.getElementById('pillTxt').textContent=c.cycle[0];
-  document.getElementById('bragLabel').classList.toggle('show',c.brag);
-  document.getElementById('pillIco').style.display=c.brag?'none':'';
-  document.getElementById('siDot').classList.toggle('show',c.brag);
-  startCycling();
+function setTrans(t){trans=t;const w=document.getElementById('W');w.classList.remove('use-slide','use-wipe');w.classList.add('use-'+t)}
+function setDarkTex(v){
+  var w=document.getElementById("W");
+  w.classList.remove("dark-tex-a","dark-tex-b","dark-tex-c");
+  if(v!=="off") w.classList.add("dark-tex-"+v);
 }
-
-function startCycling(){
-  if(cycleTimer)clearInterval(cycleTimer);
-  const c=CFG[cur];
-  if(!c.cycle||c.cycle.length<2)return;
-  cycleTimer=setInterval(()=>{
-    cycleIdx=(cycleIdx+1)%c.cycle.length;
-    const txt=document.getElementById('pillTxt');
-    txt.style.opacity='0';
-    setTimeout(()=>{
-      txt.textContent=c.cycle[cycleIdx];
-      txt.style.opacity='1';
-      if(c.brag){
-        const isBragText=c.cycle[cycleIdx].includes('BRAG')||c.cycle[cycleIdx].includes('TELL')||c.cycle[cycleIdx].includes('SAY');
-        document.getElementById('bragLabel').classList.toggle('show',isBragText);
-        document.getElementById('pillIco').style.display=isBragText?'none':'';
-      }
-    },300);
-  },3500);
-}
-
-function positionDrop(){
-  const wrap=document.getElementById('mergeWrap');
-  const drop=document.getElementById('drop');
-  const rect=wrap.getBoundingClientRect();
-  const main=document.querySelector('.main').getBoundingClientRect();
-  drop.style.left=(rect.left - main.left)+'px';
-  drop.style.width=rect.width+'px';
-  drop.style.top=(rect.bottom - main.top)+'px';
-}
-
-function openC(){
-  if(cycleTimer)clearInterval(cycleTimer);
-  hidePeek();
-  if(peekTimer)clearTimeout(peekTimer);
-  document.getElementById('pill').classList.add('open');
-  document.getElementById('mergeWrap').classList.add('open');
-  document.getElementById('mergeWrap').style.width=openWidth+'px';
-  document.getElementById('searchIcon').classList.add('active');
-  // Position after a frame so width has applied
-  requestAnimationFrame(()=>{positionDrop()});
-  // Reposition after transition finishes too
-  setTimeout(positionDrop,360);
-  document.getElementById('drop').classList.add('open');
-  document.getElementById('ov').classList.add('on');
-  document.getElementById('bragLabel').classList.remove('show');
-  document.getElementById('pillIco').style.display='none';
-  chatStarted=false;
-  initChat();
-}
-
-function closeC(){
-  document.getElementById('pill').classList.remove('open');
-  document.getElementById('mergeWrap').classList.remove('open');
-  document.getElementById('mergeWrap').style.width=closedWidth+'px';
-  document.getElementById('searchIcon').classList.remove('active');
-  document.getElementById('drop').classList.remove('open');
-  document.getElementById('ov').classList.remove('on');
-  render();
-  peekEnabled=document.getElementById('peekToggle').checked;
-  if(peekEnabled)setTimeout(()=>startPeekCycle(),2000);
-}
-
-function initChat(){
-  const m=document.getElementById('msgs'),c=CFG[cur];
-  m.innerHTML='';
-  document.getElementById('welcome').classList.remove('collapsed');
-  document.getElementById('miniHeader').classList.remove('show');
-  m.innerHTML+=`<div class="ctx">${c.ctx}</div>`;
-  let h='<div class="prs">';
-  c.prompts.forEach(p=>{h+=`<button class="pr ${p.c}" onclick="tap(this.textContent)">${p.t}</button>`});
-  h+='</div>';
-  m.innerHTML+=h;
-}
-
-function collapseWelcome(){
-  if(chatStarted)return;
-  chatStarted=true;
-  document.getElementById('welcome').classList.add('collapsed');
-  document.getElementById('miniHeader').classList.add('show');
-}
-
-function botMsg(html,cls){
-  return `<div class="m-row"><div class="m-av">${MINI_SVG}</div><div class="m bot ${cls||''}">${html}</div></div>`;
-}
-
-function tap(t){
-  const m=document.getElementById('msgs');
-  collapseWelcome();
-  const b=m.querySelector('.prs');if(b)b.style.display='none';
-  m.innerHTML+=`<div class="m usr">${t}</div>`;
-  if(t.toLowerCase()==='error'||t.toLowerCase().includes('test error')){
-    setTimeout(()=>{
-      m.innerHTML+=`<div class="m-row"><div class="m-av">${MINI_SVG}</div><div><div class="m bot err">Hold on, even hype men need a second sometimes. Bad connection. Try that again?</div></div></div>`;
-      m.scrollTop=m.scrollHeight;
-    },800);
-    m.scrollTop=m.scrollHeight;return;
-  }
-  if(DW.some(w=>t.toLowerCase().includes(w))){
-    setTimeout(()=>{m.innerHTML+=`<div class="m-row"><div class="m-av">${MINI_SVG}</div><div><div class="m bot df">${DF}</div></div></div>`;showPr();m.scrollTop=m.scrollHeight},600);
-    m.scrollTop=m.scrollHeight;return;
-  }
-  const lt=LD[Math.floor(Math.random()*LD.length)];
-  const lid='l'+Date.now();
-  m.innerHTML+=`<div class="m-row" id="${lid}"><div class="m-av">${MINI_SVG}</div><div><div class="m bot ld">${lt}</div></div></div>`;
-  m.scrollTop=m.scrollHeight;
-  setTimeout(()=>{
-    const el=document.getElementById(lid);if(!el)return;
-    const r=R[t]||"Cleveland\u2019s got more going on than your city has excuses. Ask me something specific and I\u2019ll really get going.";
-    const tl=t.toLowerCase();
-    const fmt=detectFormat(tl,r);
-    let inner;
-    if(fmt==='dm'){
-      const dmText=r.replace(/^.*copy paste.*?:\n\n/i,'').replace(/^"|"$/g,'');
-      inner=`<div><div class="m bot dm"><div class="dm-label">\u2709 Ready to paste</div><div class="dm-body">${dmText}</div>${acts()}</div></div>`;
-    } else if(fmt==='tiktok'){
-      const parts=r.split(/\n\n/);
-      const concept=parts[0]||'';
-      const caption=parts.find(p=>p.startsWith('Caption:'))||'';
-      const tags=parts.find(p=>p.startsWith('#'))||'';
-      inner=`<div><div class="m bot tik"><div class="tik-head"><span>\ud83c\udfac</span> TIKTOK CONCEPT</div><div class="tik-body">${concept}</div>${caption?`<div class="tik-caption">${caption}</div>`:''}${tags?`<div class="tik-caption" style="color:var(--blue)">${tags}</div>`:''}<div class="acts" style="padding:8px 14px;border-top:1px solid #333"><button class="ab" onclick="cp(this)">\ud83d\udccb Copy</button><button class="ab" onclick="alert('Share sheet would open here')">\u2197 Share</button></div></div></div>`;
-    } else if(fmt==='comeback'){
-      const lines=r.split('\n');let intro='';let items=[];
-      lines.forEach(l=>{const tr2=l.trim();if(tr2.startsWith('"')&&tr2.endsWith('"')){items.push(tr2.slice(1,-1))}else if(tr2.length>0){intro+=tr2+' '}});
-      let cbH=`<div><div class="m bot">${intro.trim()}<div class="cb-list">`;
-      items.forEach(item=>{cbH+=`<div class="cb-item"><div class="cb-text">\u201c${item}\u201d</div><button class="cb-cp" onclick="cpItem(this,\`${item.replace(/`/g,'\\`')}\`)">Copy</button></div>`});
-      cbH+=`</div><div class="acts"><button class="ab" onclick="alert('Share sheet would open here')">\u2197 Share all</button></div></div></div>`;
-      inner=cbH;
-    } else if(fmt==='caption'){
-      const pts=r.split(/\n\n(?=#)/);
-      inner=`<div><div class="m bot cap">${pts[0]}${pts[1]?`<div class="tags">${pts[1]}</div>`:''}${acts()}</div></div>`;
-    } else {
-      inner=`<div><div class="m bot">${r}${acts()}</div></div>`;
-    }
-    el.outerHTML=`<div class="m-row"><div class="m-av">${MINI_SVG}</div>${inner}</div>`;
-    showFu(t);
-    m.scrollTop=m.scrollHeight;
-  },1400);
-}
-
-function detectFormat(tl,r){
-  if(tl.includes('dm')||tl.includes('send my friend'))return 'dm';
-  if(tl.includes('tiktok'))return 'tiktok';
-  if((tl.includes('comeback')||tl.includes('roast')||tl.includes('hater')||tl.includes('trash talk'))&&r.includes('"'))return 'comeback';
-  if((tl.includes('caption')||tl.includes('instagram'))&&r.includes('#'))return 'caption';
-  if(r.includes('#')&&(tl.includes('caption')||tl.includes('post')||tl.includes('write me')))return 'caption';
-  return 'default';
-}
-
-function cpItem(btn,text){
-  navigator.clipboard.writeText(text).then(()=>{btn.classList.add('done');btn.textContent='\u2713';setTimeout(()=>{btn.classList.remove('done');btn.textContent='Copy'},2000)});
-}
-
-function acts(){
-  return '<div class="acts"><button class="ab" onclick="smartShare(this)">'+(/Mobi|Android/i.test(navigator.userAgent)?'\u2197 Share':'\ud83d\udccb Copy')+'</button></div>';
-}
-
-function smartShare(btn){
-  const msgEl=btn.closest('.m');
-  const text=msgEl.childNodes[0]?msgEl.childNodes[0].textContent:'';
-  if(navigator.share&&/Mobi|Android/i.test(navigator.userAgent)){
-    navigator.share({text:text}).catch(()=>{});
+function setMascot(v,btn){
+  var coach=document.getElementById('coach');
+  var img=document.getElementById('mascotImg');
+  document.querySelectorAll('.mascot-picker button').forEach(function(b){b.classList.remove('active')});
+  if(btn) btn.classList.add('active');
+  if(v==='none'){
+    coach.classList.remove('has-mascot');
+    img.src='';
   } else {
-    navigator.clipboard.writeText(text).then(()=>{
-      btn.classList.add('cp');btn.textContent='\u2713 Copied!';
-      setTimeout(()=>{btn.classList.remove('cp');btn.textContent='\ud83d\udccb Copy'},2000);
-    });
+    var srcs={doga:'mascot-doga.png',dogb:'mascot-dogb.png',guardian:'mascot-guardian.png',mega:'mascot-megaphone.png'};
+    var src=srcs[v]||'mascot-doga.png';
+    img.src=src;
+    coach.classList.add('has-mascot');
+  }
+}
+function setView(v){
+  var w=document.getElementById("W");
+  w.classList.toggle("mobile-view",v==="mobile");
+}
+
+
+// === MODE SWITCHING ===
+function doSwitch(){
+  const next=mode==='travel'?'brag':'travel';
+  const w=document.getElementById('W');
+
+  // Reset messages
+  document.getElementById('tMsgs').classList.add('hidden');
+  document.getElementById('tMsgs').innerHTML='';
+  document.getElementById('bMsgs').classList.add('hidden');
+  document.getElementById('bMsgs').innerHTML='';
+
+  if(trans==='wipe'){
+    const bar=document.getElementById('wipeBar');
+    bar.classList.remove('go');void bar.offsetWidth;bar.classList.add('go');
+    setTimeout(()=>{applyMode(next)},180);
+    bar.addEventListener('animationend',()=>bar.classList.remove('go'),{once:true});
+  } else {
+    applyMode(next);
+  }
+}
+function applyMode(m){
+  mode=m;
+  const w=document.getElementById('W');
+  const btn=document.getElementById('modeBtn');
+  if(m==='brag'){
+    w.classList.add('brag-mode');
+    btn.className='mode-btn to-travel';
+    btn.textContent='\u2190 Back to Travel Agent';
+    document.getElementById('inp').placeholder='Talk trash, ask for a caption...';
+    setTimeout(()=>{const c=document.getElementById('coach');c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop')},trans==='wipe'?0:300);
+  } else {
+    w.classList.remove('brag-mode');
+    btn.className='mode-btn to-brag';
+    btn.textContent='Chat with Brag Coach';
+    document.getElementById('inp').placeholder='How can I help you?';
   }
 }
 
-function showPr(){
-  const m=document.getElementById('msgs'),c=CFG[cur];
-  let h='<div class="prs">';
-  c.prompts.forEach(p=>{h+=`<button class="pr ${p.c}" onclick="tap(this.textContent)">${p.t}</button>`});
-  h+='</div>';m.innerHTML+=h;
+// === PROMPTS ===
+function renderPrompts(){
+  const el=document.getElementById('bPrompts');
+  el.innerHTML=PAGES[page].prompts.map(p=>'<button class="b-pr" onclick="bragTap(this.textContent)">'+p+'</button>').join('');
 }
 
-function showFu(orig){
-  const m=document.getElementById('msgs'),c=CFG[cur];
-  const fu=c.prompts.filter(p=>p.t!==orig).slice(0,2);
-  if(!fu.length)return;
-  let h='<div class="prs">';
-  fu.forEach(p=>{h+=`<button class="pr ${p.c}" onclick="tap(this.textContent)">${p.t}</button>`});
-  h+='</div>';m.innerHTML+=h;
+// === SCROLL ===
+function scroll(panel){
+  document.getElementById(panel==='brag'?'pBrag':'pTravel').scrollTop=99999;
 }
 
-function send(){const i=document.getElementById('inp'),t=i.value.trim();if(!t)return;i.value='';tap(t)}
-
-function cp(btn){
-  const t=btn.closest('.m').childNodes[0].textContent;
-  navigator.clipboard.writeText(t).then(()=>{btn.classList.add('cp');btn.textContent='\u2713 Copied!';setTimeout(()=>{btn.classList.remove('cp');btn.textContent='\ud83d\udccb Copy'},2000)});
+// === TRAVEL TAP ===
+function travelTap(t){
+  const m=document.getElementById('tMsgs');m.classList.remove('hidden');
+  m.innerHTML+='<div class="msg usr-t" style="align-self:flex-end">'+t+'</div>';
+  scroll('travel');
+  setTimeout(()=>{m.innerHTML+='<div class="m-row"><div class="m-av travel-av">DC</div><div class="msg bot-t">[Travel agent response would appear here.]</div></div>';scroll('travel')},800);
 }
 
-function triggerJiggle(){
-  const pill=document.getElementById('pill');
-  pill.classList.add('jiggle');
-  pill.addEventListener('animationend',()=>pill.classList.remove('jiggle'),{once:true});
-}
+// === BRAG TAP ===
+function bragTap(t){
+  const m=document.getElementById('bMsgs');
+  m.classList.remove('hidden');
+  m.querySelectorAll('.b-prompts').forEach(el=>el.remove());
+  m.innerHTML+='<div class="msg usr-b" style="align-self:flex-end">'+t+'</div>';
+  scroll('brag');
 
-let peekTimer=null;
-let peekEnabled=false;
-
-function showPeek(){
-  const peek=document.getElementById('charPeek');
-  if(!peek||chatStarted||!peekEnabled)return;
-  peek.style.display='block';peek.classList.add('visible');
-  setTimeout(()=>peek.classList.add('bob'),300);
-}
-function hidePeek(){
-  const peek=document.getElementById('charPeek');
-  if(!peek)return;peek.classList.remove('visible','bob');peek.style.display='none';
-}
-function startPeekCycle(){
-  if(peekTimer)clearTimeout(peekTimer);if(!peekEnabled)return;
-  peekTimer=setTimeout(()=>{
-    if(!chatStarted&&peekEnabled)showPeek();
-    setTimeout(()=>{hidePeek();if(peekEnabled)startPeekCycle()},4000);
-  },5000);
-}
-function stopPeekCycle(){if(peekTimer)clearTimeout(peekTimer);peekTimer=null;hidePeek()}
-function togglePeek(){
-  peekEnabled=document.getElementById('peekToggle').checked;
-  if(peekEnabled)startPeekCycle();else stopPeekCycle();
-}
-
-function triggerBrag(){
-  triggerJiggle();
-  if(document.getElementById('peekToggle').checked)showPeek();
-  setTimeout(()=>openC(),700);
-}
-
-let baseWidth=0;
-let closedWidth=0;
-let openWidth=0;
-
-function measureAndSize(){
-  if(isMob())return;
-  const wrap=document.getElementById('mergeWrap');
-  // Remove any set width to measure natural
-  wrap.style.width='';
-  wrap.style.transition='none';
-  baseWidth=wrap.offsetWidth;
-  closedWidth=Math.round(baseWidth*1.25);
-  openWidth=Math.round(closedWidth*1.15);
-  wrap.style.width=closedWidth+'px';
-  // Re-enable transition next frame
-  requestAnimationFrame(()=>{wrap.style.transition=''});
-}
-
-render();
-// Measure after fonts load
-if(document.fonts&&document.fonts.ready){
-  document.fonts.ready.then(()=>measureAndSize());
-} else {
-  setTimeout(measureAndSize,200);
-}
-window.addEventListener('resize',()=>{
-  if(window.innerWidth>768) measureAndSize();
-  if(document.getElementById('drop').classList.contains('open')){
-    document.getElementById('mergeWrap').style.width=openWidth+'px';
-    positionDrop();
+  // Deflection
+  if(DEFLECT_WORDS.some(w=>t.toLowerCase().includes(w))){
+    setTimeout(()=>{
+      m.innerHTML+='<div class="m-row">'+AV+'<div class="msg bot-b df">'+DEFLECT_MSG+'<div style="margin-top:8px"><a onclick="doSwitch()" style="font-size:12px;color:#5dd57a;cursor:pointer;text-decoration:underline">Try Travel Agent</a></div></div></div>';
+      addFollowUps(t);scroll('brag');
+    },600);return;
   }
-});
-
-/* === MOBILE === */
-let forceMobile=false;
-function isMob(){return forceMobile||window.innerWidth<=768}
-
-function setDevice(mode){
-  forceMobile=(mode==='mobile');
-  document.body.classList.toggle('force-mobile',forceMobile);
-  document.getElementById('devDesk').classList.toggle('on',!forceMobile);
-  document.getElementById('devMob').classList.toggle('on',forceMobile);
-  // Close everything when switching
-  closeC();
-  closeMob();
-  if(!forceMobile) measureAndSize();
-}
-
-let mobStarted=false;
-
-// Override search icon click for mobile
-document.getElementById('searchIcon').onclick=function(){
-  if(isMob()) openMob();
-  else openC();
-};
-
-function openMob(){
-  document.getElementById('ov').classList.add('on');
-  document.getElementById('mobSheet').classList.add('open');
-  // Default to search tab, but if brag page, open brag tab
-  const c=CFG[cur];
-  if(c.brag){switchTab('brag')} else {switchTab('search')}
-  document.getElementById('mobDot').classList.toggle('show',c.brag);
-}
-
-function closeMob(){
-  document.getElementById('ov').classList.remove('on');
-  document.getElementById('mobSheet').classList.remove('open');
-}
-
-// Close overlay should also close mobile sheet
-const origOvClick=document.getElementById('ov').onclick;
-document.getElementById('ov').onclick=function(){
-  if(isMob())closeMob(); else closeC();
-};
-
-function switchTab(tab){
-  document.getElementById('tabSearch').classList.toggle('active',tab==='search');
-  document.getElementById('tabBrag').classList.toggle('active',tab==='brag');
-  document.getElementById('panelSearch').classList.toggle('hidden',tab!=='search');
-  document.getElementById('panelBrag').classList.toggle('hidden',tab!=='brag');
-  if(tab==='brag'&&!mobStarted){initMobChat()}
-  if(tab==='search'){
-    setTimeout(()=>document.getElementById('mobSearchInput').focus(),100);
+  // Error test
+  if(t.toLowerCase()==='error'){
+    setTimeout(()=>{m.innerHTML+='<div class="m-row">'+AV+'<div class="msg bot-b err">Hold on, even hype men need a second sometimes. Try again?</div></div>';scroll('brag')},800);return;
   }
-}
+  // Loading
+  var lt=LOADING[Math.floor(Math.random()*LOADING.length)];
+  var lid='ld'+Date.now();
+  m.innerHTML+='<div class="m-row" id="'+lid+'">'+AV+'<div class="msg bot-b ld" style="animation:pulse 1.2s ease-in-out infinite">'+lt+'</div></div>';
+  scroll('brag');
 
-function initMobChat(){
-  const m=document.getElementById('mobMsgs'),c=CFG[cur];
-  m.innerHTML='';
-  mobStarted=false;
-  document.getElementById('mobWelcome').classList.remove('collapsed');
-  document.getElementById('mobMini').classList.remove('show');
-  m.innerHTML+=`<div class="ctx">${c.ctx}</div>`;
-  let h='<div class="prs">';
-  c.prompts.forEach(p=>{h+=`<button class="pr ${p.c}" onclick="mobTap(this.textContent)">${p.t}</button>`});
-  h+='</div>';
-  m.innerHTML+=h;
-}
-
-function mobCollapseWelcome(){
-  if(mobStarted)return;
-  mobStarted=true;
-  document.getElementById('mobWelcome').classList.add('collapsed');
-  document.getElementById('mobMini').classList.add('show');
-}
-
-function mobTap(t){
-  const m=document.getElementById('mobMsgs');
-  mobCollapseWelcome();
-  const b=m.querySelector('.prs');if(b)b.style.display='none';
-  m.innerHTML+=`<div class="m usr">${t}</div>`;
-  if(DW.some(w=>t.toLowerCase().includes(w))){
-    setTimeout(()=>{m.innerHTML+=`<div class="m-row"><div class="m-av">${MINI_SVG}</div><div><div class="m bot df">${DF}</div></div></div>`;mobShowPr();m.scrollTop=m.scrollHeight},600);
-    m.scrollTop=m.scrollHeight;return;
-  }
-  const lt=LD[Math.floor(Math.random()*LD.length)];
-  const lid='ml'+Date.now();
-  m.innerHTML+=`<div class="m-row" id="${lid}"><div class="m-av">${MINI_SVG}</div><div><div class="m bot ld">${lt}</div></div></div>`;
-  m.scrollTop=m.scrollHeight;
   setTimeout(()=>{
-    const el=document.getElementById(lid);if(!el)return;
-    const r=R[t]||"Cleveland\u2019s got more going on than your city has excuses. Ask me something specific and I\u2019ll really get going.";
-    const tl=t.toLowerCase();
-    const fmt=detectFormat(tl,r);
-    let inner;
-    if(fmt==='dm'){
-      const dmText=r.replace(/^.*copy paste.*?:\n\n/i,'').replace(/^"|"$/g,'');
-      inner=`<div><div class="m bot dm"><div class="dm-label">\u2709 Ready to paste</div><div class="dm-body">${dmText}</div>${acts()}</div></div>`;
-    } else if(fmt==='tiktok'){
-      const parts=r.split(/\n\n/);
-      const concept=parts[0]||'';
-      const caption=parts.find(p=>p.startsWith('Caption:'))||'';
-      const tags=parts.find(p=>p.startsWith('#'))||'';
-      inner=`<div><div class="m bot tik"><div class="tik-head"><span>\ud83c\udfac</span> TIKTOK CONCEPT</div><div class="tik-body">${concept}</div>${caption?`<div class="tik-caption">${caption}</div>`:''}${tags?`<div class="tik-caption" style="color:var(--blue)">${tags}</div>`:''}<div class="acts" style="padding:8px 14px;border-top:1px solid #333"><button class="ab" onclick="cp(this)">\ud83d\udccb Copy</button></div></div></div>`;
-    } else if(fmt==='comeback'){
-      const lines=r.split('\n');let intro='';let items=[];
-      lines.forEach(l=>{const tr=l.trim();if(tr.startsWith('"')&&tr.endsWith('"')){items.push(tr.slice(1,-1))}else if(tr.length>0){intro+=tr+' '}});
-      let cbH=`<div><div class="m bot">${intro.trim()}<div class="cb-list">`;
-      items.forEach(item=>{cbH+=`<div class="cb-item"><div class="cb-text">\u201c${item}\u201d</div><button class="cb-cp" onclick="cpItem(this,\`${item.replace(/`/g,'\\`')}\`)">Copy</button></div>`});
-      cbH+=`</div></div></div>`;
-      inner=cbH;
+    var el=document.getElementById(lid);if(!el)return;
+    var r=R[t]||"Cleveland\u2019s got more going on than your city has excuses. Ask me something specific.";
+    var tl=t.toLowerCase();
+    var fmt=tl.includes('dm')||tl.includes('inviting')?'dm':(tl.includes('comeback')||tl.includes('roast')||tl.includes('hater'))&&r.includes('"')?'comeback':(tl.includes('caption')||tl.includes('instagram'))&&r.includes('#')?'caption':'default';
+    var inner;
+
+    if(fmt==='comeback'){
+      var lines=r.split('\n'),intro='',items=[];
+      lines.forEach(function(l){var s=l.trim();if(s.charAt(0)==='"'&&s.charAt(s.length-1)==='"')items.push(s.slice(1,-1));else if(s.length>0)intro+=s+' '});
+      var h='<div class="msg bot-b">'+intro.trim()+'<div class="cb-list">';
+      items.forEach(function(i){h+='<div class="cb-item"><div class="cb-text">\u201c'+i+'\u201d</div><button class="cb-cp" onclick="cpItem(this,\''+i.replace(/'/g,"\\'")+'\')">Copy</button></div>'});
+      h+='</div>'+actBtns()+'</div>';inner=h;
     } else if(fmt==='caption'){
-      const pts=r.split(/\n\n(?=#)/);
-      inner=`<div><div class="m bot cap">${pts[0]}${pts[1]?`<div class="tags">${pts[1]}</div>`:''}${acts()}</div></div>`;
+      var pts=r.split(/\n\n(?=#)/);
+      inner='<div class="msg bot-b cap">'+pts[0]+(pts[1]?'<div class="tags">'+pts[1]+'</div>':'')+actBtns()+'</div>';
+    } else if(fmt==='dm'){
+      var dmText=r.replace(/^.*copy paste.*?\n\n/i,'');
+      inner='<div class="msg bot-b"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#999;margin-bottom:6px;font-family:IBM Plex Mono,monospace">\u2709 Ready to paste</div>'+dmText+actBtns()+'</div>';
     } else {
-      inner=`<div><div class="m bot">${r}${acts()}</div></div>`;
+      inner='<div class="msg bot-b">'+r+actBtns()+'</div>';
     }
-    el.outerHTML=`<div class="m-row"><div class="m-av">${MINI_SVG}</div>${inner}</div>`;
-    mobShowFu(t);
-    m.scrollTop=m.scrollHeight;
+    el.outerHTML='<div class="m-row">'+AV+inner+'</div>';
+    addFollowUps(t);scroll('brag');
   },1400);
 }
 
-function mobSend(){
-  const i=document.getElementById('mobInp'),t=i.value.trim();
-  if(!t)return;i.value='';mobTap(t);
-}
+function actBtns(){return '<div class="acts"><button class="act-btn" onclick="cpMsg(this)">\ud83d\udccb Copy</button></div>'}
 
-function mobShowPr(){
-  const m=document.getElementById('mobMsgs'),c=CFG[cur];
-  let h='<div class="prs">';
-  c.prompts.forEach(p=>{h+=`<button class="pr ${p.c}" onclick="mobTap(this.textContent)">${p.t}</button>`});
-  h+='</div>';m.innerHTML+=h;
-}
-
-function mobShowFu(orig){
-  const m=document.getElementById('mobMsgs'),c=CFG[cur];
-  const fu=c.prompts.filter(p=>p.t!==orig).slice(0,2);
+function addFollowUps(orig){
+  var m=document.getElementById('bMsgs');
+  var fu=PAGES[page].prompts.filter(function(p){return p!==orig}).slice(0,2);
   if(!fu.length)return;
-  let h='<div class="prs">';
-  fu.forEach(p=>{h+=`<button class="pr ${p.c}" onclick="mobTap(this.textContent)">${p.t}</button>`});
-  h+='</div>';m.innerHTML+=h;
+  var h='<div class="b-prompts" style="padding:4px 0">';
+  fu.forEach(function(p){h+='<button class="b-pr" onclick="bragTap(this.textContent)">'+p+'</button>'});
+  h+='</div>';m.innerHTML+=h;scroll('brag');
 }
 
-// Mock site search
-function mobSiteSearch(){
-  const q=document.getElementById('mobSearchInput').value.trim();
-  if(!q)return;
-  const panel=document.getElementById('panelSearch');
-  // Remove old results
-  const old=panel.querySelector('.mob-results');if(old)old.remove();
-  const results=document.createElement('div');results.className='mob-results';
-  const mockResults=[
-    {title:q+' in Cleveland',url:'thisiscleveland.com/locations?q='+encodeURIComponent(q),desc:'Find '+q.toLowerCase()+' across Cleveland neighborhoods, downtown, and surrounding areas.'},
-    {title:q+' Events',url:'thisiscleveland.com/events?q='+encodeURIComponent(q),desc:'Upcoming events related to '+q.toLowerCase()+' in The Land.'},
-    {title:'Things to Do: '+q,url:'thisiscleveland.com/things-to-do?q='+encodeURIComponent(q),desc:'Explore '+q.toLowerCase()+' experiences, attractions, and more in Cleveland.'},
-  ];
-  mockResults.forEach(r=>{
-    results.innerHTML+=`<div class="mob-result"><div class="mr-title">${r.title}</div><div class="mr-url">${r.url}</div><div class="mr-desc">${r.desc}</div></div>`;
+function cpMsg(btn){
+  var t=btn.closest('.msg');
+  var text=t.childNodes[0]?t.childNodes[0].textContent:'';
+  navigator.clipboard.writeText(text).then(function(){
+    btn.classList.add('copied');btn.textContent='\u2713 Copied!';
+    setTimeout(function(){btn.classList.remove('copied');btn.textContent='\ud83d\udccb Copy'},2000);
   });
-  panel.appendChild(results);
 }
+function cpItem(btn,text){
+  navigator.clipboard.writeText(text).then(function(){
+    btn.classList.add('done');btn.textContent='\u2713';
+    setTimeout(function(){btn.classList.remove('done');btn.textContent='Copy'},2000);
+  });
+}
+function send(){var i=document.getElementById('inp'),t=i.value.trim();if(!t)return;i.value='';if(mode==='brag')bragTap(t);else travelTap(t)}
 
-function mobQuickSearch(q){
-  document.getElementById('mobSearchInput').value=q;
-  mobSiteSearch();
-}
+// Init
+renderPrompts();
 </script>
 </body>
 </html>
